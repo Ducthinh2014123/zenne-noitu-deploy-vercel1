@@ -199,7 +199,7 @@ export default function GameRoom() {
               <h2 className="text-lg font-semibold text-white mb-1">Cho bat dau...</h2>
               <p className="text-gray-500 text-sm mb-5">{gs?.players?.length||0} nguoi da vao phong.</p>
               {isHost&&(
-                <button onClick={()=>send({type:'start',first_word:'bat dau'})}
+                <button onClick={()=>send({type:'start'})}
                   className="px-8 py-3 bg-green-700 hover:bg-green-600 text-white font-semibold rounded-lg text-lg">
                   Bat dau game!
                 </button>
