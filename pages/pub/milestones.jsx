@@ -3,76 +3,53 @@ import PubLayout from '../../components/PubLayout';
 import { pubApi } from '../../lib/pubApi';
 
 export default function PubMilestones() {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState('');
+  const [d, setD]       = useState(null);
+  const [loading, setL] = useState(true);
+  const [err, setErr]   = useState('');
 
   useEffect(() => {
-    pubApi.milestones()
-      .then(r => { setData(r); setErr(''); })
-      .catch(e => setErr(e.message))
-      .finally(() => setLoading(false));
+    pubApi.milestones().then(r => { setD(r); setErr(''); }).catch(e => setErr(e.message)).finally(() => setL(false));
   }, []);
 
   return (
     <PubLayout title="🎯 Cột Mốc">
       {err && <div className="mb-4 p-3 bg-red-900/30 border border-red-700 rounded-lg text-red-400 text-sm">⚠️ {err}</div>}
-      {loading ? (
-        <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-indigo-500" /></div>
-      ) : data && (
-        <>
-          {/* Summary */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            {[
-              { label: 'Servers',    value: data.current?.servers,  emoji: '🌐' },
-              { label: 'Từ duyệt',  value: data.current?.wordbank, emoji: '📚' },
-              { label: 'Ván chơi',   value: data.current?.games,   emoji: '🎮' },
-              { label: 'Người dùng', value: data.current?.users,   emoji: '👥' },
-            ].map(s => (
-              <div key={s.label} className="bg-gray-900 border border-gray-800 rounded-xl p-4 text-center">
-                <div className="text-2xl mb-1">{s.emoji}</div>
-                <div className="text-2xl font-bold text-white">{s.value?.toLocaleString() ?? '—'}</div>
-                <div className="text-xs text-gray-400 mt-0.5">{s.label}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Milestone list */}
-          <div className="space-y-4">
-            {data.data.map(m => (
-              <div key={m.key} className={`bg-gray-900 border rounded-xl p-5 transition-colors ${
-                m.reached ? 'border-indigo-600/60' : 'border-gray-800'
-              }`}>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xl">{m.emoji}</span>
-                    <span className={`font-semibold ${
-                      m.reached ? 'text-indigo-300' : 'text-gray-300'
-                    }`}>{m.label}</span>
-                    {m.reached && (
-                      <span className="px-2 py-0.5 bg-indigo-900/60 border border-indigo-700 rounded-full text-xs text-indigo-400">
-                        ✓ Đạt được!
-                      </span>
-                    )}
+      {loading
+        ? <div className="flex justify-center py-16"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-indigo-500"/></div>
+        : d && (
+          <>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+              {[{l:'Servers',v:d.current?.servers,e:'🌐'},{l:'Từ duyệt',v:d.current?.wordbank,e:'📚'},
+                {l:'Ván chơi',v:d.current?.games,e:'🎮'},{l:'Người dùng',v:d.current?.users,e:'👥'}]
+              .map(s => (
+                <div key={s.l} className="bg-gray-900 border border-gray-800 rounded-xl p-4 text-center">
+                  <div className="text-2xl mb-1">{s.e}</div>
+                  <div className="text-2xl font-bold text-white">{s.v?.toLocaleString()??'—'}</div>
+                  <div className="text-xs text-gray-400 mt-0.5">{s.l}</div>
+                </div>
+              ))}
+            </div>
+            <div className="space-y-4">
+              {d.data.map(m => (
+                <div key={m.key} className={`bg-gray-900 border rounded-xl p-5 ${m.reached?'border-indigo-600/60':'border-gray-800'}`}>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl">{m.emoji}</span>
+                      <span className={`font-semibold ${m.reached?'text-indigo-300':'text-gray-300'}`}>{m.label}</span>
+                      {m.reached && <span className="px-2 py-0.5 bg-indigo-900/60 border border-indigo-700 rounded-full text-xs text-indigo-400">✓ Đạt!</span>}
+                    </div>
+                    <span className="text-sm text-gray-500">{m.current?.toLocaleString()} / {m.target?.toLocaleString()}</span>
                   </div>
-                  <span className="text-sm text-gray-500">
-                    {m.current?.toLocaleString()} / {m.target?.toLocaleString()}
-                  </span>
+                  <div className="w-full bg-gray-800 rounded-full h-2.5">
+                    <div className={`h-2.5 rounded-full transition-all ${m.reached?'bg-indigo-500':'bg-gray-600'}`} style={{width:m.pct+'%'}}/>
+                  </div>
+                  <div className="text-right text-xs text-gray-600 mt-1">{m.pct}%</div>
                 </div>
-                <div className="w-full bg-gray-800 rounded-full h-2.5">
-                  <div
-                    className={`h-2.5 rounded-full transition-all duration-500 ${
-                      m.reached ? 'bg-indigo-500' : 'bg-gray-600'
-                    }`}
-                    style={{ width: `${m.pct}%` }}
-                  />
-                </div>
-                <div className="text-right text-xs text-gray-600 mt-1">{m.pct}%</div>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
+              ))}
+            </div>
+          </>
+        )
+      }
     </PubLayout>
   );
 }

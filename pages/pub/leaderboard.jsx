@@ -2,76 +2,67 @@ import { useEffect, useState } from 'react';
 import PubLayout from '../../components/PubLayout';
 import { pubApi } from '../../lib/pubApi';
 
-const MEDALS = ['🥇', '🥈', '🥉'];
+const MEDALS = ['🥇','🥈','🥉'];
 
 export default function PubLeaderboard() {
-  const [data, setData] = useState([]);
-  const [mode, setMode] = useState('words');
-  const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState('');
+  const [data, setData]   = useState([]);
+  const [mode, setMode]   = useState('words');
+  const [loading, setL]   = useState(true);
+  const [err, setErr]     = useState('');
 
-  const load = (m = mode) => {
-    setLoading(true);
+  const load = (m) => {
+    setL(true);
     pubApi.leaderboard({ mode: m, limit: 50 })
-      .then(r => { setData(r.data); setErr(''); })
+      .then(r => { setData(r.data || []); setErr(''); })
       .catch(e => setErr(e.message))
-      .finally(() => setLoading(false));
+      .finally(() => setL(false));
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load('words'); }, []);
 
   const switchMode = (m) => { setMode(m); load(m); };
 
   return (
     <PubLayout title="🏆 Bảng Xếp Hạng">
       {err && <div className="mb-4 p-3 bg-red-900/30 border border-red-700 rounded-lg text-red-400 text-sm">⚠️ {err}</div>}
-
       <div className="flex gap-2 mb-6">
         {[{id:'words',label:'💬 Số Từ'},{id:'streak',label:'🔥 Streak'}].map(b => (
           <button key={b.id} onClick={() => switchMode(b.id)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              mode === b.id ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+              mode===b.id ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
             }`}>{b.label}</button>
         ))}
       </div>
-
-      {loading ? (
-        <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-indigo-500" /></div>
-      ) : (
-        <div className="space-y-2">
-          {data.map((p, i) => (
-            <div key={p.user_id}
-              className={`flex items-center gap-4 p-4 rounded-xl border transition-colors ${
-                i === 0 ? 'bg-yellow-900/20 border-yellow-700/50'
-                : i === 1 ? 'bg-gray-800/60 border-gray-600/50'
-                : i === 2 ? 'bg-orange-900/20 border-orange-700/50'
+      {loading
+        ? <div className="flex justify-center py-16"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-indigo-500"/></div>
+        : (
+          <div className="space-y-2">
+            {data.map((p, i) => (
+              <div key={p.user_id} className={`flex items-center gap-4 p-4 rounded-xl border ${
+                i===0 ? 'bg-yellow-900/20 border-yellow-700/50'
+                : i===1 ? 'bg-gray-800/60 border-gray-600/50'
+                : i===2 ? 'bg-orange-900/20 border-orange-700/50'
                 : 'bg-gray-900 border-gray-800'
               }`}>
-              <div className="w-8 text-center font-bold text-lg">
-                {MEDALS[i] || <span className="text-gray-500 text-sm">#{i+1}</span>}
-              </div>
-              {p.avatar ? (
-                <img src={p.avatar} alt={p.name} className="w-10 h-10 rounded-full object-cover" />
-              ) : (
-                <div className="w-10 h-10 rounded-full bg-indigo-800 flex items-center justify-center text-white font-bold">
-                  {p.name[0]?.toUpperCase()}
+                <div className="w-8 text-center text-lg font-bold">{MEDALS[i] ?? <span className="text-gray-500 text-sm">#{i+1}</span>}</div>
+                {p.avatar
+                  ? <img src={p.avatar} alt={p.name} className="w-10 h-10 rounded-full object-cover"/>
+                  : <div className="w-10 h-10 rounded-full bg-indigo-800 flex items-center justify-center text-white font-bold flex-shrink-0">{(p.name||'?')[0].toUpperCase()}</div>
+                }
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold text-white truncate">{p.name}</div>
+                  <div className="text-xs text-gray-500 font-mono">{p.user_id}</div>
                 </div>
-              )}
-              <div className="flex-1 min-w-0">
-                <div className="font-semibold text-white truncate">{p.name}</div>
-                <div className="text-xs text-gray-500">ID: {p.user_id}</div>
+                <div className="text-right">
+                  <div className="font-bold text-indigo-400 text-lg">{(p.total_words||0).toLocaleString()}</div>
+                  <div className="text-xs text-gray-500">từ • streak {p.max_streak||0}</div>
+                </div>
               </div>
-              <div className="text-right">
-                <div className="font-bold text-indigo-400 text-lg">{p.total_words?.toLocaleString()}</div>
-                <div className="text-xs text-gray-500">từ | streak: {p.max_streak}</div>
-              </div>
-            </div>
-          ))}
-          {data.length === 0 && (
-            <div className="text-center py-12 text-gray-500">Chưa có dữ liệu xếp hạng.</div>
-          )}
-        </div>
-      )}
+            ))}
+            {data.length===0 && <div className="text-center py-16 text-gray-500">Chưa có dữ liệu.</div>}
+          </div>
+        )
+      }
     </PubLayout>
   );
 }

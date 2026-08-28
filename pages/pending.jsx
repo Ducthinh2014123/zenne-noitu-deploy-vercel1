@@ -1,202 +1,112 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import Layout from '../components/Layout';
-import { api, isConfigured } from '../lib/api';
-
-const LIMIT = 50;
-const TABS = [
-  { key: 'pending',  label: '⏳ Đang chờ',    cls: 'badge-pending'  },
-  { key: 'approved', label: '✅ Đã duyệt',     cls: 'badge-approved' },
-  { key: 'rejected', label: '❌ Đã từ chối',   cls: 'badge-rejected' },
-];
-
-function fmt(dt) {
-  if (!dt) return '—';
-  return new Date(dt + 'Z').toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
-}
+import { api } from '../lib/api';
 
 export default function Pending() {
   const router = useRouter();
-  const [tab,    setTab]    = useState('pending');
-  const [rows,   setRows]   = useState([]);
-  const [total,  setTotal]  = useState(0);
-  const [page,   setPage]   = useState(0);
-  const [search, setSearch] = useState('');
-  const [loading,setLoading]= useState(false);
-  const [sel,    setSel]    = useState(new Set());
-  const [toast,  setToast]  = useState('');
+  const [tab, setTab]       = useState('pending');
+  const [data, setData]     = useState([]);
+  const [q, setQ]           = useState('');
+  const [selected, setSel]  = useState(new Set());
+  const [loading, setLoading] = useState(true);
+  const [msg, setMsg]       = useState('');
 
-  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 2500); };
-
-  const load = useCallback(async () => {
+  const load = useCallback(() => {
     setLoading(true);
-    setSel(new Set());
-    try {
-      const res = await api.pending({ status: tab, limit: LIMIT, offset: page * LIMIT, q: search });
-      setRows(res.data || []);
-      setTotal(res.total || 0);
-    } catch (e) {
-      showToast('❌ Lỗi: ' + e.message);
-    } finally {
-      setLoading(false);
-    }
-  }, [tab, page, search]);
+    api.pending().then(r => { setData(r.data || []); setSel(new Set()); setMsg(''); })
+      .catch(e => { if (e.message.includes('401') || e.message.includes('403')) router.push('/'); })
+      .finally(() => setLoading(false));
+  }, [router]);
 
-  useEffect(() => {
-    if (!isConfigured()) { router.push('/'); return; }
-    load();
-  }, [load, router]);
+  useEffect(() => { if (!localStorage.getItem('nt_api_url')) { router.push('/'); return; } load(); }, [load, router]);
 
-  const review = async (id, approve) => {
-    try {
-      const r = await api.review(id, approve);
-      showToast(approve ? `✅ Đã duyệt "${r.word}"` : `❌ Đã từ chối "${r.word}"`);
-      load();
-    } catch (e) { showToast('❌ ' + e.message); }
+  const filtered = data.filter(r => {
+    const matches = !q || r.word?.toLowerCase().includes(q.toLowerCase());
+    if (tab === 'pending')  return r.status === 'pending'  && matches;
+    if (tab === 'approved') return r.status === 'approved' && matches;
+    if (tab === 'rejected') return r.status === 'rejected' && matches;
+    return matches;
+  });
+
+  const act = async (id, action) => {
+    try { await api.review(id, action); setMsg(action === 'approve' ? '✅ Da duyet!' : '❌ Da tu choi!'); load(); }
+    catch { setMsg('⚠️ Loi!'); }
   };
 
-  const bulkReview = async (approve) => {
-    if (!sel.size) return;
-    try {
-      const r = await api.reviewBulk([...sel], approve);
-      showToast(`${approve ? '✅' : '❌'} Đã xử lý ${r.processed} từ`);
-      load();
-    } catch (e) { showToast('❌ ' + e.message); }
+  const bulkAct = async (action) => {
+    if (!selected.size) return;
+    try { await api.reviewBulk([...selected], action); setMsg(`✅ Da xu ly ${selected.size} tu!`); load(); }
+    catch { setMsg('⚠️ Loi!'); }
   };
 
-  const toggleAll = () => {
-    if (sel.size === rows.length) setSel(new Set());
-    else setSel(new Set(rows.map((r) => r.id)));
-  };
+  const toggle = (id) => setSel(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
+  const toggleAll = () => setSel(prev => prev.size === filtered.length ? new Set() : new Set(filtered.map(r => r.id)));
 
-  const totalPages = Math.ceil(total / LIMIT);
+  const counts = { pending: data.filter(r => r.status==='pending').length, approved: data.filter(r => r.status==='approved').length, rejected: data.filter(r => r.status==='rejected').length };
 
   return (
-    <Layout title="Duyệt Từ">
-      {/* Toast */}
-      {toast && (
-        <div className="fixed top-5 right-5 z-50 bg-gray-900 text-white px-5 py-3 rounded-xl shadow-lg text-sm">
-          {toast}
-        </div>
-      )}
-
-      {/* Tabs */}
-      <div className="flex gap-2 mb-5">
-        {TABS.map((t) => (
-          <button
-            key={t.key}
-            onClick={() => { setTab(t.key); setPage(0); }}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              tab === t.key
-                ? 'bg-indigo-600 text-white shadow'
-                : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
-            }`}
-          >
-            {t.label}
-          </button>
+    <Layout title="Duyet Tu">
+      {msg && <div className="mb-4 p-3 bg-indigo-900/30 border border-indigo-700 rounded-lg text-indigo-300 text-sm">{msg}</div>}
+      <div className="flex gap-4 mb-5">
+        {[['pending','⏳ Chờ duyệt'],['approved','✅ Đã duyệt'],['rejected','❌ Đã từ chối']].map(([k,l]) => (
+          <button key={k} onClick={() => setTab(k)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
+              tab===k ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-gray-900 border-gray-700 text-gray-400 hover:text-white'
+            }`}>{l} <span className="ml-1 bg-gray-800 px-2 py-0.5 rounded-full text-xs">{counts[k]}</span></button>
         ))}
-        <span className="ml-auto text-sm text-gray-500 self-center">{total} từ</span>
       </div>
-
-      <div className="card">
-        {/* Toolbar */}
-        <div className="flex flex-wrap gap-3 mb-4">
-          <input
-            className="input max-w-xs"
-            placeholder="🔍 Tìm từ..."
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(0); }}
-          />
-          {tab === 'pending' && sel.size > 0 && (
-            <div className="flex gap-2 ml-auto">
-              <span className="self-center text-sm text-gray-500">{sel.size} đã chọn</span>
-              <button onClick={() => bulkReview(true)}  className="btn-success">✅ Duyệt tất cả</button>
-              <button onClick={() => bulkReview(false)} className="btn-danger" >❌ Từ chối tất cả</button>
-            </div>
-          )}
-        </div>
-
-        {/* Table */}
-        <div className="overflow-x-auto rounded-lg border border-gray-200">
-          <table>
+      <div className="flex gap-3 mb-5">
+        <input className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500"
+          placeholder="Tim tu..." value={q} onChange={e => setQ(e.target.value)} />
+        {tab==='pending' && selected.size > 0 && (
+          <>
+            <button onClick={() => bulkAct('approve')} className="px-4 py-2 bg-green-700 hover:bg-green-600 text-white rounded-lg text-sm font-medium">✅ Duyet {selected.size}</button>
+            <button onClick={() => bulkAct('reject')}  className="px-4 py-2 bg-red-800 hover:bg-red-700 text-white rounded-lg text-sm font-medium">❌ Tu choi {selected.size}</button>
+          </>
+        )}
+      </div>
+      {loading ? <div className="flex justify-center py-16"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-indigo-500"/></div> : (
+        <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+          <table className="w-full text-sm">
             <thead>
-              <tr>
-                {tab === 'pending' && (
-                  <th className="w-10">
-                    <input type="checkbox" onChange={toggleAll}
-                      checked={sel.size === rows.length && rows.length > 0}
-                      className="rounded" />
-                  </th>
-                )}
-                <th>Từ</th>
-                <th>Server ID</th>
-                <th>Người gửi</th>
-                <th>Thời gian</th>
-                <th>Trạng thái</th>
-                {tab === 'pending' && <th className="text-right">Thao tác</th>}
+              <tr className="border-b border-gray-800 text-gray-400">
+                {tab==='pending' && <th className="px-4 py-3 w-10"><input type="checkbox" checked={selected.size===filtered.length && filtered.length>0} onChange={toggleAll} className="accent-indigo-500"/></th>}
+                <th className="px-4 py-3 text-left">Tu</th>
+                <th className="px-4 py-3 text-left hidden md:table-cell">Server ID</th>
+                <th className="px-4 py-3 text-left hidden md:table-cell">Nguoi gui</th>
+                <th className="px-4 py-3 text-left">Thoi gian</th>
+                <th className="px-4 py-3 text-left">Trang thai</th>
+                {tab==='pending' && <th className="px-4 py-3 text-right">Thao tac</th>}
               </tr>
             </thead>
             <tbody>
-              {loading ? (
-                <tr><td colSpan={7} className="text-center py-8 text-gray-400">⏳ Đang tải...</td></tr>
-              ) : rows.length === 0 ? (
-                <tr><td colSpan={7} className="text-center py-8 text-gray-400">Không có từ nào</td></tr>
-              ) : rows.map((row) => (
-                <tr key={row.id}>
-                  {tab === 'pending' && (
-                    <td>
-                      <input type="checkbox"
-                        checked={sel.has(row.id)}
-                        onChange={(e) => {
-                          const s = new Set(sel);
-                          e.target.checked ? s.add(row.id) : s.delete(row.id);
-                          setSel(s);
-                        }}
-                        className="rounded" />
-                    </td>
-                  )}
-                  <td><span className="font-semibold text-indigo-700 text-base">{row.word}</span></td>
-                  <td><code className="text-xs bg-gray-100 px-1.5 py-0.5 rounded">{row.guild_id}</code></td>
-                  <td><code className="text-xs bg-gray-100 px-1.5 py-0.5 rounded">{row.user_id}</code></td>
-                  <td className="text-gray-500 text-xs">{fmt(row.submitted_at)}</td>
-                  <td><span className={`badge-${row.status}`}>{row.status}</span></td>
-                  {tab === 'pending' && (
-                    <td className="text-right">
-                      <div className="flex gap-1.5 justify-end">
-                        <button onClick={() => review(row.id, true)}  className="btn-success">✅</button>
-                        <button onClick={() => review(row.id, false)} className="btn-danger" >❌</button>
-                      </div>
+              {filtered.map(r => (
+                <tr key={r.id} className="border-b border-gray-800/50 hover:bg-gray-800/30">
+                  {tab==='pending' && <td className="px-4 py-3"><input type="checkbox" checked={selected.has(r.id)} onChange={()=>toggle(r.id)} className="accent-indigo-500"/></td>}
+                  <td className="px-4 py-3 font-semibold text-white">{r.word}</td>
+                  <td className="px-4 py-3 text-gray-400 hidden md:table-cell font-mono text-xs">{r.guild_id}</td>
+                  <td className="px-4 py-3 text-gray-400 hidden md:table-cell font-mono text-xs">{r.submitted_by}</td>
+                  <td className="px-4 py-3 text-gray-500 text-xs">{r.submitted_at ? new Date(r.submitted_at).toLocaleString('vi-VN') : ''}</td>
+                  <td className="px-4 py-3">
+                    <span className={`px-2 py-0.5 rounded-full text-xs ${
+                      r.status==='approved' ? 'bg-green-900/50 text-green-400' :
+                      r.status==='rejected' ? 'bg-red-900/50 text-red-400' : 'bg-yellow-900/50 text-yellow-400'
+                    }`}>{r.status}</span>
+                  </td>
+                  {tab==='pending' && (
+                    <td className="px-4 py-3 text-right">
+                      <button onClick={()=>act(r.id,'approve')} className="px-3 py-1 bg-green-700 hover:bg-green-600 text-white rounded text-xs mr-2">✅ Duyet</button>
+                      <button onClick={()=>act(r.id,'reject')}  className="px-3 py-1 bg-red-800 hover:bg-red-700 text-white rounded text-xs">❌ Tu choi</button>
                     </td>
                   )}
                 </tr>
               ))}
+              {filtered.length===0 && <tr><td colSpan="7" className="text-center py-10 text-gray-600">Khong co tu nao.</td></tr>}
             </tbody>
           </table>
         </div>
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between mt-4">
-            <button
-              onClick={() => setPage((p) => Math.max(0, p - 1))}
-              disabled={page === 0}
-              className="btn-ghost disabled:opacity-40"
-            >
-              ← Trước
-            </button>
-            <span className="text-sm text-gray-500">
-              Trang {page + 1} / {totalPages}
-            </span>
-            <button
-              onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-              disabled={page >= totalPages - 1}
-              className="btn-ghost disabled:opacity-40"
-            >
-              Sau →
-            </button>
-          </div>
-        )}
-      </div>
+      )}
     </Layout>
   );
 }

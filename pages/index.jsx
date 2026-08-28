@@ -1,91 +1,65 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
-import { isConfigured, saveConfig, api } from '../lib/api';
+import Head from 'next/head';
 
 export default function Login() {
   const router = useRouter();
-  const [url, setUrl]     = useState('http://nile.hidencloud.com:5055');
-  const [key, setKey]     = useState('');
-  const [error, setError] = useState('');
+  const [url, setUrl]   = useState('');
+  const [key, setKey]   = useState('');
+  const [err, setErr]   = useState('');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (isConfigured()) router.push('/pending');
-  }, [router]);
+    setUrl(localStorage.getItem('nt_api_url') || '');
+    setKey(localStorage.getItem('nt_api_key') || '');
+  }, []);
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
+  const login = async (e) => {
+    e.preventDefault(); setErr(''); setLoading(true);
+    const base = url.trim().replace(/\/$/, '');
     try {
-      saveConfig(url, key);
-      await api.stats(); // test connection
+      const r = await fetch(base + '/api/pending', { headers: { 'X-API-Key': key.trim() } });
+      if (r.status === 403) { setErr('Sai API Key!'); return; }
+      if (!r.ok) { setErr('Loi ket noi: ' + r.status); return; }
+      localStorage.setItem('nt_api_url', base);
+      localStorage.setItem('nt_api_key', key.trim());
       router.push('/pending');
-    } catch (err) {
-      setError('Kết nối thất bại: ' + err.message);
-    } finally {
-      setLoading(false);
-    }
+    } catch { setErr('Khong ket noi duoc den API.'); }
+    finally { setLoading(false); }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-gray-900 to-gray-800 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="text-5xl mb-3">🔤</div>
-          <h1 className="text-3xl font-bold text-white">Nối Từ Admin</h1>
-          <p className="text-gray-400 mt-2">Đăng nhập để quản lý từ vựng</p>
-        </div>
-
-        <form onSubmit={handleLogin} className="bg-white rounded-2xl shadow-2xl p-8 space-y-5">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              🌐 API Server URL
-            </label>
-            <input
-              className="input"
-              type="url"
-              placeholder="http://nile.hidencloud.com:5055"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              required
-            />
-            <p className="text-xs text-gray-400 mt-1">URL của Flask API chạy trên server bot</p>
+    <>
+      <Head><title>Dang nhap — Noi Tu Admin</title></Head>
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
+        <div className="w-full max-w-md">
+          <div className="text-center mb-8">
+            <div className="text-5xl mb-3">🐟</div>
+            <h1 className="text-2xl font-bold text-white">Nối Từ Bot</h1>
+            <p className="text-gray-500 text-sm mt-1">Admin Dashboard</p>
           </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              🔑 API Key
-            </label>
-            <input
-              className="input"
-              type="password"
-              placeholder="Nhập API_KEY trong file .env"
-              value={key}
-              onChange={(e) => setKey(e.target.value)}
-              required
-            />
-          </div>
-
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
-              ❌ {error}
+          <form onSubmit={login} className="bg-gray-900 border border-gray-800 rounded-2xl p-8 space-y-5">
+            {err && <div className="p-3 bg-red-900/30 border border-red-700 rounded-lg text-red-400 text-sm">⚠️ {err}</div>}
+            <div>
+              <label className="block text-sm text-gray-400 mb-1.5">API URL</label>
+              <input className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500"
+                placeholder="http://nile.hidencloud.com:24702" value={url} onChange={e => setUrl(e.target.value)} required />
             </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full btn-primary justify-center py-3 text-base rounded-lg"
-          >
-            {loading ? '⏳ Đang kết nối...' : '🚀 Đăng nhập'}
-          </button>
-        </form>
-
-        <p className="text-center text-gray-500 text-xs mt-6">
-          Dữ liệu được lưu trong trình duyệt — không gửi về Vercel
-        </p>
+            <div>
+              <label className="block text-sm text-gray-400 mb-1.5">API Key</label>
+              <input type="password" className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500"
+                placeholder="mat-khau-api" value={key} onChange={e => setKey(e.target.value)} required />
+            </div>
+            <button type="submit" disabled={loading}
+              className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 text-white font-semibold rounded-lg transition-colors">
+              {loading ? 'Dang ket noi...' : '🚀 Dang nhap'}
+            </button>
+            <div className="text-center pt-2">
+              <a href="/pub" className="text-sm text-indigo-400 hover:text-indigo-300">🌍 Xem trang public →</a>
+            </div>
+          </form>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

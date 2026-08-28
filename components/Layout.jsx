@@ -1,86 +1,55 @@
+import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { useEffect, useState } from 'react';
-import { api, clearConfig, isConfigured } from '../lib/api';
 
 const NAV = [
-  { href: '/pending',     icon: '⏳', label: 'Duyệt Từ' },
-  { href: '/wordbank',    icon: '📖', label: 'Kho Từ' },
-  { href: '/leaderboard', icon: '🏆', label: 'Bảng Xếp Hạng' },
+  { href: '/pending',    icon: '⏳', label: 'Duyệt Từ' },
+  { href: '/wordbank',   icon: '📚', label: 'Kho Từ' },
+  { href: '/leaderboard',icon: '🏆', label: 'Bảng Xếp Hạng' },
+  { href: '/servers',    icon: '🌐', label: 'Server' },
 ];
 
-export default function Layout({ children, title = '' }) {
+export default function Layout({ children, title = 'Admin' }) {
   const router = useRouter();
-  const [stats, setStats] = useState(null);
-
-  useEffect(() => {
-    if (!isConfigured()) { router.push('/'); return; }
-    api.stats().then(setStats).catch(() => {});
-  }, [router]);
-
-  const logout = () => { clearConfig(); router.push('/'); };
-
+  const logout = () => { localStorage.clear(); router.push('/'); };
   return (
-    <div className="flex min-h-screen">
-      {/* Sidebar */}
-      <aside className="w-56 bg-gray-900 text-gray-100 flex flex-col fixed inset-y-0 left-0 z-10">
-        <div className="px-5 py-5 border-b border-gray-700">
-          <div className="text-lg font-bold text-white">🔤 Nối Từ</div>
-          <div className="text-xs text-gray-400 mt-0.5">Admin Dashboard</div>
-        </div>
-
-        {/* stats mini */}
-        {stats && (
-          <div className="px-4 py-3 border-b border-gray-700 text-xs space-y-1">
-            <div className="flex justify-between">
-              <span className="text-gray-400">⏳ Chờ duyệt</span>
-              <span className="font-bold text-yellow-400">{stats.pending}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-400">📖 Kho từ</span>
-              <span className="font-bold text-green-400">{stats.wordbank}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-400">🌐 Server</span>
-              <span className="font-bold text-blue-400">{stats.guilds}</span>
-            </div>
+    <>
+      <Head><title>{title} — Nối Từ Admin</title></Head>
+      <div className="flex min-h-screen bg-gray-950">
+        <aside className="w-56 bg-gray-900 border-r border-gray-800 flex flex-col">
+          <div className="p-4 border-b border-gray-800">
+            <h1 className="font-bold text-white">🐟 Nối Từ</h1>
+            <p className="text-xs text-gray-500">Admin Dashboard</p>
           </div>
-        )}
-
-        {/* Nav */}
-        <nav className="flex-1 px-3 py-4 space-y-1">
-          {NAV.map(({ href, icon, label }) => (
-            <Link
-              key={href}
-              href={href}
-              className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                router.pathname === href
-                  ? 'bg-indigo-600 text-white'
-                  : 'text-gray-300 hover:bg-gray-800 hover:text-white'
-              }`}
-            >
-              <span>{icon}</span> {label}
-            </Link>
-          ))}
-        </nav>
-
-        <div className="px-3 pb-5">
-          <button
-            onClick={logout}
-            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-gray-400 hover:bg-gray-800 hover:text-red-400 transition-colors"
-          >
-            🚪 Đăng xuất
-          </button>
-        </div>
-      </aside>
-
-      {/* Main */}
-      <main className="flex-1 ml-56">
-        <header className="bg-white border-b border-gray-200 px-8 py-4">
-          <h1 className="text-xl font-semibold text-gray-800">{title}</h1>
-        </header>
-        <div className="p-8">{children}</div>
-      </main>
-    </div>
+          <nav className="flex-1 p-3 space-y-1">
+            {NAV.map(n => (
+              <Link key={n.href} href={n.href}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
+                  router.pathname === n.href
+                    ? 'bg-indigo-600 text-white font-medium'
+                    : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                }`}>
+                {n.icon} {n.label}
+              </Link>
+            ))}
+            <div className="pt-3 border-t border-gray-800 mt-3">
+              <Link href="/pub" className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-indigo-400 hover:bg-gray-800">
+                🌍 Trang Public
+              </Link>
+            </div>
+          </nav>
+          <div className="p-3 border-t border-gray-800">
+            <button onClick={logout}
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-500 hover:text-white hover:bg-gray-800">
+              🚪 Đăng xuất
+            </button>
+          </div>
+        </aside>
+        <main className="flex-1 p-8 overflow-auto">
+          {title && <h1 className="text-2xl font-bold text-white mb-6">{title}</h1>}
+          {children}
+        </main>
+      </div>
+    </>
   );
 }
