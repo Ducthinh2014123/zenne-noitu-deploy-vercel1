@@ -1,6 +1,7 @@
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
+import { useSession, signOut } from 'next-auth/react';
 
 const NAV = [
   { href: '/pub',             icon: '🏠', label: 'Trang Chủ' },
@@ -14,6 +15,7 @@ const NAV = [
 
 export default function PubLayout({ children, title = 'Nối Từ Bot' }) {
   const router = useRouter();
+  const { data: session, status: authStatus } = useSession();
   const isActive = (href) => href === '/pub' ? router.pathname === '/pub' : router.pathname.startsWith(href);
   return (
     <>
@@ -37,9 +39,32 @@ export default function PubLayout({ children, title = 'Nối Từ Bot' }) {
                   <span className="hidden md:inline">{n.label}</span>
                 </Link>
               ))}
-              <Link href="/pending" className="ml-2 px-2 py-1.5 text-xs text-gray-600 hover:text-gray-400 hover:bg-gray-800 rounded-lg">
-                Admin →
-              </Link>
+              <div className="flex items-center gap-1 ml-1 pl-1 border-l border-gray-800 flex-shrink-0">
+                {authStatus === 'authenticated' && (
+                  <>
+                    <Link href="/account"
+                      className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                        router.pathname === '/account' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                      }`}>
+                      <span>⚙️</span>
+                      <span className="hidden md:inline">{session?.user?.username || session?.user?.name || 'Tài khoản'}</span>
+                    </Link>
+                    <button onClick={() => signOut({ callbackUrl: '/auth/login' })} title="Đăng xuất"
+                      className="px-2 py-1.5 text-xs text-gray-500 hover:text-red-400 hover:bg-gray-800 rounded-lg">
+                      🚪
+                    </button>
+                  </>
+                )}
+                {authStatus === 'unauthenticated' && (
+                  <Link href="/auth/login"
+                    className="px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap bg-indigo-600 text-white hover:bg-indigo-500">
+                    🔑 <span className="hidden md:inline">Đăng nhập</span>
+                  </Link>
+                )}
+                <Link href="/pending" className="px-2 py-1.5 text-xs text-gray-600 hover:text-gray-400 hover:bg-gray-800 rounded-lg whitespace-nowrap">
+                  Admin →
+                </Link>
+              </div>
             </div>
           </div>
         </header>
