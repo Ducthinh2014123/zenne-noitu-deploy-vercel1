@@ -225,7 +225,7 @@ export default function AuthLogin() {
                     <OAuthBtn icon={<GoogleIcon/>}    label="Tiếp tục với Google"    loading={loading==='google'}    disabled={any&&loading!=='google'}    onClick={()=>oAuth('google')}/>
                     <OAuthBtn icon={<GithubIcon/>}    label="Tiếp tục với GitHub"    loading={loading==='github'}    disabled={any&&loading!=='github'}    onClick={()=>oAuth('github')}/>
                     <OAuthBtn icon={<FacebookIcon/>}  label="Tiếp tục với Facebook"  loading={loading==='facebook'}  disabled={any&&loading!=='facebook'}  onClick={()=>oAuth('facebook')}/>
-                    <OAuthBtn icon={<MicrosoftIcon/>} label="Tiếp tục với Microsoft" loading={loading==='microsoft'} disabled={any&&loading!=='microsoft'} onClick={()=>oAuth('microsoft')}/>
+                    <OAuthBtn icon={<MicrosoftIcon/>} label="Tiếp tục với Microsoft" loading={loading==='azure-ad'} disabled={any&&loading!=='azure-ad'} onClick={()=>oAuth('azure-ad')}/>
                   </div>
                   <Divider text="hoặc đăng nhập bằng email"/>
                   <form onSubmit={doLogin} className="space-y-4" noValidate>
