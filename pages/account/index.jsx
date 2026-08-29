@@ -6,9 +6,7 @@ import PubLayout from '../../components/PubLayout';
 const PROVIDER_BADGE = {
   google:      { label: 'Google',    emoji: '🔵', cls: 'bg-blue-900/40 text-blue-300 border-blue-700' },
   github:      { label: 'GitHub',    emoji: '⚫', cls: 'bg-gray-800 text-gray-300 border-gray-600' },
-  facebook:    { label: 'Facebook',  emoji: '🟦', cls: 'bg-blue-900/40 text-blue-300 border-blue-700' },
   discord:     { label: 'Discord',   emoji: '🟣', cls: 'bg-indigo-900/50 text-indigo-300 border-indigo-700' },
-  steam:       { label: 'Steam',     emoji: '🎮', cls: 'bg-cyan-900/40 text-cyan-300 border-cyan-700' },
   credentials: { label: 'Email',     emoji: '📧', cls: 'bg-yellow-900/40 text-yellow-300 border-yellow-700' },
 };
 
@@ -153,7 +151,6 @@ export default function AccountPage() {
   const twoFAEnabled = user.totp_enabled;
   const provider     = user.provider || 'credentials';
   const badge        = PROVIDER_BADGE[provider] || PROVIDER_BADGE.credentials;
-  const isSteam      = provider === 'steam';
 
   return (
     <PubLayout title="Tài khoản của tôi">
@@ -173,9 +170,6 @@ export default function AccountPage() {
               {user.email && !user.email.includes('@noitu.local') && (
                 <div className="text-sm text-gray-400">{user.email}</div>
               )}
-              {isSteam && user.email?.includes('@noitu.local') && (
-                <div className="text-xs text-gray-600 italic">Steam không cung cấp email</div>
-              )}
               <span className={`inline-flex items-center gap-1.5 mt-1.5 text-xs px-2.5 py-0.5 rounded-full border ${badge.cls}`}>
                 {badge.emoji} {badge.label}
               </span>
@@ -185,9 +179,9 @@ export default function AccountPage() {
 
         {/* Change / Set Password */}
         <Card title={hasPassword ? '🔑 Đổi mật khẩu' : '🔑 Đặt mật khẩu'}>
-          {isSteam && !hasPassword && (
-            <div className="p-3 bg-cyan-900/20 border border-cyan-800 rounded-xl text-cyan-300 text-sm">
-              🎮 Bạn đăng nhập qua Steam. Đặt mật khẩu để cũng có thể đăng nhập bằng email!
+          {!hasPassword && provider !== 'credentials' && (
+            <div className="p-3 bg-indigo-900/20 border border-indigo-800 rounded-xl text-indigo-300 text-sm">
+              ℹ️ Bạn đăng nhập qua {badge.label}. Đặt mật khẩu để cũng có thể đăng nhập bằng email!
             </div>
           )}
           <p className="text-sm text-gray-400">

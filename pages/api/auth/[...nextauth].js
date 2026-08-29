@@ -1,10 +1,8 @@
 import NextAuth from 'next-auth';
 import GoogleProvider   from 'next-auth/providers/google';
 import GitHubProvider   from 'next-auth/providers/github';
-import FacebookProvider from 'next-auth/providers/facebook';
 import DiscordProvider  from 'next-auth/providers/discord';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import crypto from 'crypto';
 
 const BOT_API      = (process.env.BOT_API_URL || '').replace(/\/$/, '');
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
@@ -26,19 +24,6 @@ async function upsertOAuthUser({ provider, providerAccountId, name, email, image
   return { id: providerAccountId, name, email, image, isAdmin: ADMIN_EMAILS.includes((email||'').toLowerCase()) };
 }
 
-/** Xac thuc Steam one-time token duoc tao boi steam-callback.js */
-function verifySteamToken(token) {
-  try {
-    const secret = process.env.NEXTAUTH_SECRET || 'fallback';
-    const [b64, sig] = token.split('.');
-    const expectedSig = crypto.createHmac('sha256', secret).update(b64).digest('hex');
-    if (!crypto.timingSafeEqual(Buffer.from(sig, 'hex'), Buffer.from(expectedSig, 'hex'))) return null;
-    const payload = JSON.parse(Buffer.from(b64, 'base64url').toString());
-    if (Date.now() > payload.exp) return null; // het han
-    return payload;
-  } catch { return null; }
-}
-
 export const authOptions = {
   providers: [
     GoogleProvider({
@@ -51,11 +36,6 @@ export const authOptions = {
       clientSecret: process.env.GITHUB_SECRET || '',
       allowDangerousEmailAccountLinking: true,
     }),
-    FacebookProvider({
-      clientId:     process.env.FACEBOOK_CLIENT_ID     || '',
-      clientSecret: process.env.FACEBOOK_CLIENT_SECRET || '',
-      allowDangerousEmailAccountLinking: true,
-    }),
     DiscordProvider({
       clientId:     process.env.DISCORD_CLIENT_ID     || '',
       clientSecret: process.env.DISCORD_CLIENT_SECRET || '',
@@ -65,27 +45,11 @@ export const authOptions = {
       id:   'credentials',
       name: 'Email & Mat khau',
       credentials: {
-        email:      { label: 'Email',     type: 'email'    },
-        password:   { label: 'Mat khau',  type: 'password' },
-        totpCode:   { label: 'Ma OTP',    type: 'text'     },
-        steamToken: { label: 'Steam JWT', type: 'text'     }, // dung cho Steam flow
+        email:    { label: 'Email',    type: 'email'    },
+        password: { label: 'Mat khau', type: 'password' },
+        totpCode: { label: 'Ma OTP',   type: 'text'     },
       },
       async authorize(credentials) {
-        // ─── Steam one-time token flow ───
-        if (credentials?.steamToken) {
-          const payload = verifySteamToken(credentials.steamToken);
-          if (!payload) return null;
-          return {
-            id:       payload.id,
-            name:     payload.name,
-            email:    payload.email,
-            image:    payload.image,
-            isAdmin:  payload.isAdmin || ADMIN_EMAILS.includes((payload.email||'').toLowerCase()),
-            username: payload.username || payload.name,
-            provider: 'steam',
-          };
-        }
-
         // ─── Email + password flow ───
         if (!credentials?.email || !credentials?.password) return null;
         if (!BOT_API) return null;

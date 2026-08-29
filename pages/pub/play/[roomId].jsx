@@ -1,18 +1,19 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useRouter } from 'next/router';
+import { useSession } from 'next-auth/react';
 import PubLayout from '../../../components/PubLayout';
-import { getWsUrl } from '../../../lib/pubApi';
+import { getWsUrl, pubApi } from '../../../lib/pubApi';
 
 export default function GameRoom() {
   const router = useRouter();
   const { roomId } = router.query;
+  const { data: session, status: authStatus } = useSession();
   const wsRef    = useRef(null);
   const timerRef = useRef(null);
   const logRef   = useRef(null);
   const inputRef = useRef(null);
 
   const [phase, setPhase]       = useState('name');   // name|waiting|playing|ended
-  const [nameInput, setNameInput] = useState('');
   const [myName, setMyName]     = useState('');
   const [isHost, setIsHost]     = useState(false);
   const [gs, setGs]             = useState(null);     // game state
@@ -44,11 +45,16 @@ export default function GameRoom() {
     if (wsRef.current?.readyState === WebSocket.OPEN) wsRef.current.send(JSON.stringify(msg));
   }, []);
 
-  const connect = useCallback((name) => {
+  const connect = useCallback(async (name) => {
     const wsUrl = getWsUrl(roomId);
     if (!wsUrl) { setError('Chua co API URL. Vao trang Admin dang nhap truoc.'); return; }
+    let token;
+    try {
+      const t = await pubApi.gameToken();
+      token = t.token;
+    } catch (e) { setError(e.message || 'Ban can dang nhap de choi online.'); return; }
     const ws = new WebSocket(wsUrl); wsRef.current = ws;
-    ws.onopen = () => { setConn(true); ws.send(JSON.stringify({ type:'join', name })); };
+    ws.onopen = () => { setConn(true); ws.send(JSON.stringify({ type:'join', name, token })); };
     ws.onclose = () => { setConn(false); addLog('Mat ket noi.', false); };
     ws.onerror = () => setError('Loi WebSocket — kiem tra CF Worker da cap nhat chua.');
     ws.onmessage = (e) => {
@@ -110,30 +116,50 @@ export default function GameRoom() {
   const pct = timeLimit>0 ? (timer/timeLimit)*100 : 0;
   const timerCls = timer>10 ? 'bg-green-500' : timer>5 ? 'bg-yellow-500' : 'bg-red-500';
 
-  // Name screen
-  if (phase==='name') return (
+  if (authStatus === 'loading') return (
+    <PubLayout title="Game"><div className="flex justify-center py-20"><div className="animate-spin rounded-full h-10 w-10 border-t-2 border-indigo-500"/></div></PubLayout>
+  );
+
+  if (authStatus !== 'authenticated') return (
     <PubLayout title="Vao Phong">
-      {error && <div className="mb-4 p-3 bg-red-900/30 border border-red-700 rounded-lg text-red-400 text-sm">{error}</div>}
-      <div className="max-w-sm mx-auto mt-10">
-        <div className="bg-gray-900 border border-gray-700 rounded-2xl p-8">
-          <div className="text-center mb-6">
-            <div className="text-4xl mb-2">🎮</div>
-            <h2 className="text-xl font-bold text-white">Noi Tu Online</h2>
-            <p className="text-gray-500 text-sm mt-1">Phong: <code className="text-indigo-400 font-mono">{roomId}</code></p>
-          </div>
-          <form onSubmit={e=>{e.preventDefault();const n=nameInput.trim();if(n)connect(n);}} className="space-y-4">
-            <input autoFocus
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white text-center text-lg placeholder-gray-600 focus:outline-none focus:border-indigo-500"
-              placeholder="Nhap ten cua ban" maxLength={20} value={nameInput} onChange={e=>setNameInput(e.target.value)}/>
-            <button type="submit" disabled={!nameInput.trim()}
-              className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white font-semibold rounded-lg text-lg">
-              Vao phong!
-            </button>
-          </form>
-        </div>
+      <div className="max-w-sm mx-auto mt-10 bg-gray-900 border border-gray-700 rounded-2xl p-8 text-center">
+        <div className="text-4xl mb-3">🔒</div>
+        <h2 className="text-lg font-bold text-white mb-2">Cần đăng nhập để vào phòng</h2>
+        <p className="text-gray-500 text-sm mb-6">Đăng nhập để điểm của bạn được ghi vào bảng xếp hạng chung.</p>
+        <button onClick={()=>router.push('/auth/login?callbackUrl=' + encodeURIComponent('/pub/play/' + roomId))}
+          className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg">
+          🔑 Đăng nhập
+        </button>
       </div>
     </PubLayout>
   );
+
+  // Name screen — ten lay tu tai khoan da dang nhap, khong cho tu go de dam bao gan dung danh tinh voi bang xep hang.
+  if (phase==='name') {
+    const suggestedName = session?.user?.username || session?.user?.name || 'Nguoi choi';
+    return (
+      <PubLayout title="Vao Phong">
+        {error && <div className="mb-4 p-3 bg-red-900/30 border border-red-700 rounded-lg text-red-400 text-sm">{error}</div>}
+        <div className="max-w-sm mx-auto mt-10">
+          <div className="bg-gray-900 border border-gray-700 rounded-2xl p-8">
+            <div className="text-center mb-6">
+              <div className="text-4xl mb-2">🎮</div>
+              <h2 className="text-xl font-bold text-white">Noi Tu Online</h2>
+              <p className="text-gray-500 text-sm mt-1">Phong: <code className="text-indigo-400 font-mono">{roomId}</code></p>
+            </div>
+            <div className="text-center mb-5 p-3 bg-gray-800 rounded-lg">
+              <div className="text-xs text-gray-500">Vào phong với tài khoản</div>
+              <div className="text-white font-semibold">{suggestedName}</div>
+            </div>
+            <button onClick={()=>connect(suggestedName)}
+              className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white font-semibold rounded-lg text-lg">
+              Vao phong!
+            </button>
+          </div>
+        </div>
+      </PubLayout>
+    );
+  }
 
   return (
     <PubLayout title={'Phong ' + roomId}>

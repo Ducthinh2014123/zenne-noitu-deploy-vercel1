@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { useRouter } from 'next/router';
+import { useSession } from 'next-auth/react';
 import PubLayout from '../../../components/PubLayout';
 import { pubApi } from '../../../lib/pubApi';
 
 export default function PlayIndex() {
   const router = useRouter();
+  const { status } = useSession();
   const [lang, setLang]     = useState('vi');
   const [sec, setSec]       = useState(30);
   const [joinId, setJoinId] = useState('');
@@ -21,6 +23,26 @@ export default function PlayIndex() {
   };
 
   const join = (e) => { e.preventDefault(); const id = joinId.trim().toLowerCase(); if (id) router.push('/pub/play/' + id); };
+
+  if (status === 'loading') return (
+    <PubLayout title="🎮 Chơi Nối Từ Online">
+      <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-10 w-10 border-t-2 border-indigo-500"/></div>
+    </PubLayout>
+  );
+
+  if (status !== 'authenticated') return (
+    <PubLayout title="🎮 Chơi Nối Từ Online">
+      <div className="max-w-sm mx-auto mt-10 bg-gray-900 border border-gray-700 rounded-2xl p-8 text-center">
+        <div className="text-4xl mb-3">🔒</div>
+        <h2 className="text-lg font-bold text-white mb-2">Cần đăng nhập để chơi</h2>
+        <p className="text-gray-500 text-sm mb-6">Đăng nhập để điểm của bạn được ghi vào bảng xếp hạng chung, kể cả khi chơi trên web.</p>
+        <button onClick={()=>router.push('/auth/login?callbackUrl=' + encodeURIComponent('/pub/play'))}
+          className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg">
+          🔑 Đăng nhập
+        </button>
+      </div>
+    </PubLayout>
+  );
 
   return (
     <PubLayout title="🎮 Chơi Nối Từ Online">
