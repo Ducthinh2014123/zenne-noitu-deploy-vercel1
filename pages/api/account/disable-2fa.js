@@ -9,8 +9,8 @@ export default async function handler(req, res) {
   const { code, password } = req.body || {};
   if (!code && !password) return res.status(400).json({ error: 'Can ma OTP hoac mat khau' });
   const { ok, status, data } = await botApi('POST', '/pub/account/disable-2fa', {
-    user_id: session.user.id,
-    code: code || '',
+    user_id:  session.user.id,
+    code:     code     || '',
     password: password || '',
   });
   return res.status(ok ? 200 : status).json(data);

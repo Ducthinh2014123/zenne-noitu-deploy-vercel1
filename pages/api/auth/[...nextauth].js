@@ -1,11 +1,12 @@
 import NextAuth from 'next-auth';
-import GoogleProvider    from 'next-auth/providers/google';
-import GitHubProvider    from 'next-auth/providers/github';
-import FacebookProvider  from 'next-auth/providers/facebook';
-import AzureADProvider   from 'next-auth/providers/azure-ad';
+import GoogleProvider   from 'next-auth/providers/google';
+import GitHubProvider   from 'next-auth/providers/github';
+import FacebookProvider from 'next-auth/providers/facebook';
+import DiscordProvider  from 'next-auth/providers/discord';
 import CredentialsProvider from 'next-auth/providers/credentials';
+import crypto from 'crypto';
 
-const BOT_API = (process.env.BOT_API_URL || '').replace(/\/$/, '');
+const BOT_API      = (process.env.BOT_API_URL || '').replace(/\/$/, '');
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
 
 async function upsertOAuthUser({ provider, providerAccountId, name, email, image }) {
@@ -25,6 +26,19 @@ async function upsertOAuthUser({ provider, providerAccountId, name, email, image
   return { id: providerAccountId, name, email, image, isAdmin: ADMIN_EMAILS.includes((email||'').toLowerCase()) };
 }
 
+/** Xac thuc Steam one-time token duoc tao boi steam-callback.js */
+function verifySteamToken(token) {
+  try {
+    const secret = process.env.NEXTAUTH_SECRET || 'fallback';
+    const [b64, sig] = token.split('.');
+    const expectedSig = crypto.createHmac('sha256', secret).update(b64).digest('hex');
+    if (!crypto.timingSafeEqual(Buffer.from(sig, 'hex'), Buffer.from(expectedSig, 'hex'))) return null;
+    const payload = JSON.parse(Buffer.from(b64, 'base64url').toString());
+    if (Date.now() > payload.exp) return null; // het han
+    return payload;
+  } catch { return null; }
+}
+
 export const authOptions = {
   providers: [
     GoogleProvider({
@@ -42,25 +56,40 @@ export const authOptions = {
       clientSecret: process.env.FACEBOOK_CLIENT_SECRET || '',
       allowDangerousEmailAccountLinking: true,
     }),
-    AzureADProvider({
-      clientId:     process.env.AZURE_AD_CLIENT_ID     || '',
-      clientSecret: process.env.AZURE_AD_CLIENT_SECRET || '',
-      tenantId:     process.env.AZURE_AD_TENANT_ID     || 'common',
+    DiscordProvider({
+      clientId:     process.env.DISCORD_CLIENT_ID     || '',
+      clientSecret: process.env.DISCORD_CLIENT_SECRET || '',
       allowDangerousEmailAccountLinking: true,
     }),
     CredentialsProvider({
-      id: 'credentials',
+      id:   'credentials',
       name: 'Email & Mat khau',
       credentials: {
-        email:     { label: 'Email',     type: 'email'    },
-        password:  { label: 'Mat khau',  type: 'password' },
-        totpCode:  { label: 'Ma OTP',    type: 'text'     },
+        email:      { label: 'Email',     type: 'email'    },
+        password:   { label: 'Mat khau',  type: 'password' },
+        totpCode:   { label: 'Ma OTP',    type: 'text'     },
+        steamToken: { label: 'Steam JWT', type: 'text'     }, // dung cho Steam flow
       },
       async authorize(credentials) {
+        // ─── Steam one-time token flow ───
+        if (credentials?.steamToken) {
+          const payload = verifySteamToken(credentials.steamToken);
+          if (!payload) return null;
+          return {
+            id:       payload.id,
+            name:     payload.name,
+            email:    payload.email,
+            image:    payload.image,
+            isAdmin:  payload.isAdmin || ADMIN_EMAILS.includes((payload.email||'').toLowerCase()),
+            username: payload.username || payload.name,
+            provider: 'steam',
+          };
+        }
+
+        // ─── Email + password flow ───
         if (!credentials?.email || !credentials?.password) return null;
         if (!BOT_API) return null;
         try {
-          // B1: Verify email + password
           const r = await fetch(BOT_API + '/pub/auth/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -70,12 +99,9 @@ export const authOptions = {
           const user = await r.json();
           if (!user?.id) return null;
 
-          // B2: Neu 2FA bat, kiem tra OTP
+          // Kiem tra 2FA
           if (user.totp_enabled) {
-            if (!credentials.totpCode) {
-              // Thong bao frontend can nhap OTP
-              throw new Error('Needs2FA');
-            }
+            if (!credentials.totpCode) throw new Error('Needs2FA');
             const r2 = await fetch(BOT_API + '/pub/auth/verify-2fa', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -88,7 +114,6 @@ export const authOptions = {
           user.username = user.username || user.name;
           return user;
         } catch (e) {
-          // Re-throw known errors so NextAuth passes them to the login page
           if (e.message === 'Needs2FA' || e.message === 'Invalid2FA') throw e;
           console.error('[auth/credentials]', e);
           return null;
