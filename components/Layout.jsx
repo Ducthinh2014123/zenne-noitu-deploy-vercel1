@@ -11,7 +11,7 @@ const NAV = [
 
 export default function Layout({ children, title = 'Admin' }) {
   const router = useRouter();
-  const logout = () => { localStorage.clear(); router.push('/'); };
+  const logout = () => { localStorage.removeItem('nt_api_url'); localStorage.removeItem('nt_api_key'); router.push('/pending'); };
   return (
     <>
       <Head><title>{title} — Nối Từ Admin</title></Head>

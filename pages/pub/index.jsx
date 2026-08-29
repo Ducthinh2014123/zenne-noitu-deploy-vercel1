@@ -32,7 +32,7 @@ export default function PubHome() {
     <PubLayout title="🏠 Trang Chủ">
       {err && (
         <div className="mb-6 p-4 bg-red-900/30 border border-red-700 rounded-lg text-red-400 text-sm">
-          ⚠️ {err} — Hãy <a href="/" className="underline">vào Admin</a> đăng nhập API URL trước.
+          ⚠️ Không kết nối được tới server bot ({err}). Vui lòng thử lại sau.
         </div>
       )}
 

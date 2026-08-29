@@ -24,6 +24,7 @@ export default function GameRoom() {
   const [flash, setFlash]       = useState(null);
   const [copyOk, setCopyOk]     = useState(false);
   const [error, setError]       = useState('');
+  const [checking, setChecking] = useState(false);
 
   const addLog = useCallback((text, ok=true) => {
     setLog(prev => [...prev.slice(-99), { text, ok }]);
@@ -63,9 +64,17 @@ export default function GameRoom() {
         setGs(d); setPhase('playing'); startTick(d.time_limit||30);
         addLog('Game bat dau! Tu dau: "' + d.current_word + '"');
       } else if (t==='word_accepted') {
+        setChecking(false);
         setGs(prev=>prev?({...prev,current_word:d.word,last_char:d.word.slice(-1)}):prev);
         startTick(timeLimit); addLog(d.player + ': ' + d.word + ' (+' + d.score + ')');
+      } else if (t==='checking') {
+        setChecking(true);
+      } else if (t==='word_invalid') {
+        setChecking(false);
+        flash_('Tu "' + d.word + '" khong ton tai trong tu dien!', false);
+        addLog(d.player + ' nhap tu khong hop le: "' + d.word + '" \u2192 mat mang (con ' + d.lives + ')', false);
       } else if (t==='word_used') {
+        setChecking(false);
         flash_('Tu "' + d.word + '" da dung roi!', false);
         addLog(d.player + ' dung tu lap → mat mang (con ' + d.lives + ')', false);
       } else if (t==='timeout') {
@@ -87,6 +96,7 @@ export default function GameRoom() {
         setPhase('waiting'); clearInterval(timerRef.current); setTimer(0);
         addLog('Game khoi dong lai.');
       } else if (t==='error') {
+        setChecking(false);
         flash_(d.msg, false);
       }
     };
@@ -227,16 +237,16 @@ export default function GameRoom() {
 
           {/* Input */}
           {phase==='playing'&&(
-            <form onSubmit={e=>{e.preventDefault();const w=wordInput.trim();if(w){send({type:'word',word:w});setWord('');inputRef.current?.focus();}}} className="flex gap-2">
+            <form onSubmit={e=>{e.preventDefault();const w=wordInput.trim();if(w&&!checking){send({type:'word',word:w});setWord('');inputRef.current?.focus();}}} className="flex gap-2">
               <input ref={inputRef} autoFocus
                 className={`flex-1 bg-gray-800 border rounded-lg px-4 py-3 text-white text-lg placeholder-gray-600 focus:outline-none transition-colors ${
-                  isMyTurn?'border-indigo-500':'border-gray-700 opacity-60'
+                  isMyTurn&&!checking?'border-indigo-500':'border-gray-700 opacity-60'
                 }`}
-                placeholder={isMyTurn?`Bat dau bang "${gs?.last_char}"...`:'Chua den luot ban'}
-                disabled={!isMyTurn} value={wordInput} onChange={e=>setWord(e.target.value)}/>
-              <button type="submit" disabled={!isMyTurn||!wordInput.trim()}
+                placeholder={isMyTurn?(checking?'Dang kiem tra tu...':`Bat dau bang "${gs?.last_char}"...`):'Chua den luot ban'}
+                disabled={!isMyTurn||checking} value={wordInput} onChange={e=>setWord(e.target.value)}/>
+              <button type="submit" disabled={!isMyTurn||!wordInput.trim()||checking}
                 className="px-5 py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white font-bold rounded-lg text-xl">
-                ➔
+                {checking?'⏳':'➔'}
               </button>
             </form>
           )}

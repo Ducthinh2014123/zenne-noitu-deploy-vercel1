@@ -25,7 +25,7 @@ const PwStrength = ({ pw }) => { const n=[/.{8,}/,/[A-Z]/,/[0-9]/,/[^A-Za-z0-9]/
 
 export default function AuthLogin() {
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const { callbackUrl, error: qError, steam_token, steam_msg } = router.query;
 
   const [tab,       setTab]       = useState('login');
@@ -60,10 +60,12 @@ export default function AuthLogin() {
 
   useEffect(() => { setAUrl(localStorage.getItem('nt_api_url')||''); setAKey(localStorage.getItem('nt_api_key')||''); }, []);
 
-  // Redirect khi da login
+  // Redirect khi da login. Luon ve /pub (hoac callbackUrl) — trang Admin (/pending)
+  // dung mot he thong xac thuc rieng (API Key), khong tu dong dieu huong vao day
+  // de tranh vong lap dang xuat/dang nhap khi chua ket noi API Key.
   useEffect(() => {
-    if (status === 'authenticated') router.push(callbackUrl||(session?.user?.isAdmin?'/pending':'/pub'));
-  }, [status, session, router, callbackUrl]);
+    if (status === 'authenticated') router.push(callbackUrl||'/pub');
+  }, [status, router, callbackUrl]);
 
   // Xu ly loi tu URL
   useEffect(() => {
@@ -85,7 +87,7 @@ export default function AuthLogin() {
   useEffect(() => {
     if (!steam_token || status !== 'unauthenticated') return;
     setLoading('steam');
-    setMsg({ type:'info', text: '🎮 Đang xác thực Steam...' });
+    setMsg({ type:'info', text: '🎮 Đang xác th��c Steam...' });
     signIn('credentials', { steamToken: steam_token, redirect: false }).then(res => {
       setLoading('');
       if (!res?.ok || res?.error) setMsg({ type:'error', text: 'Xác thực Steam thất bại. Thử lại.' });

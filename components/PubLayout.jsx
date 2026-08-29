@@ -37,7 +37,7 @@ export default function PubLayout({ children, title = 'Nối Từ Bot' }) {
                   <span className="hidden md:inline">{n.label}</span>
                 </Link>
               ))}
-              <Link href="/" className="ml-2 px-2 py-1.5 text-xs text-gray-600 hover:text-gray-400 hover:bg-gray-800 rounded-lg">
+              <Link href="/pending" className="ml-2 px-2 py-1.5 text-xs text-gray-600 hover:text-gray-400 hover:bg-gray-800 rounded-lg">
                 Admin →
               </Link>
             </div>
@@ -49,7 +49,7 @@ export default function PubLayout({ children, title = 'Nối Từ Bot' }) {
         </main>
         <footer className="border-t border-gray-800 py-4 text-center text-xs text-gray-600">
           🐟 Nối Từ Bot · <Link href="/pub/play" className="hover:text-gray-400">Chơi Online</Link>
-          {' · '}<Link href="/" className="hover:text-gray-400">Admin</Link>
+          {' · '}<Link href="/pending" className="hover:text-gray-400">Admin</Link>
         </footer>
       </div>
     </>
