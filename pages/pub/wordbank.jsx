@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import PubLayout from '../../components/PubLayout';
 import { pubApi } from '../../lib/pubApi';
+import { IconAlertTriangle, IconSearch, IconPin, IconChevronLeft, IconChevronRight } from '../../components/icons';
 
 const LIMIT = 60;
 
@@ -25,13 +26,16 @@ export default function PubWordbank() {
   const pages = Math.max(1, Math.ceil(total / LIMIT));
 
   return (
-    <PubLayout title="📚 Kho Từ Đã Duyệt">
-      {err && <div className="mb-4 p-3 bg-red-900/30 border border-red-700 rounded-lg text-red-400 text-sm">⚠️ {err}</div>}
+    <PubLayout title="Kho Từ Đã Duyệt">
+      {err && <div className="flex items-center gap-2 mb-4 p-3 bg-red-900/30 border border-red-700 rounded-lg text-red-400 text-sm"><IconAlertTriangle className="w-4 h-4" /> {err}</div>}
       <div className="flex gap-3 mb-6">
-        <input className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500"
-          placeholder="🔍 Tìm kiếm từ..." value={q} onChange={e => { setQ(e.target.value); setPage(0); }} />
-        <span className="flex items-center px-4 bg-gray-800 border border-gray-700 rounded-lg text-gray-400 text-sm whitespace-nowrap">
-          📌 {total.toLocaleString()} từ
+        <div className="relative flex-1">
+          <IconSearch className="w-4 h-4 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2" />
+          <input className="w-full bg-gray-800 border border-gray-700 rounded-lg pl-9 pr-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500"
+            placeholder="Tìm kiếm từ..." value={q} onChange={e => { setQ(e.target.value); setPage(0); }} />
+        </div>
+        <span className="flex items-center gap-1.5 px-4 bg-gray-800 border border-gray-700 rounded-lg text-gray-400 text-sm whitespace-nowrap">
+          <IconPin className="w-3.5 h-3.5" /> {total.toLocaleString()} từ
         </span>
       </div>
       {loading
@@ -48,10 +52,10 @@ export default function PubWordbank() {
               {data.length===0 && <div className="col-span-full text-center py-16 text-gray-500">Không tìm thấy từ nào.</div>}
             </div>
             {pages > 1 && (
-              <div className="flex justify-center gap-2">
-                <button onClick={() => setPage(p=>Math.max(0,p-1))} disabled={page===0} className="px-4 py-2 rounded-lg bg-gray-800 text-gray-300 disabled:opacity-40 hover:bg-gray-700 text-sm">← Trước</button>
+              <div className="flex justify-center items-center gap-2">
+                <button onClick={() => setPage(p=>Math.max(0,p-1))} disabled={page===0} className="flex items-center justify-center px-4 py-2 rounded-lg bg-gray-800 text-gray-300 disabled:opacity-40 hover:bg-gray-700 text-sm"><IconChevronLeft className="w-4 h-4" /></button>
                 <span className="px-4 py-2 text-sm text-gray-400">Trang {page+1}/{pages}</span>
-                <button onClick={() => setPage(p=>Math.min(pages-1,p+1))} disabled={page>=pages-1} className="px-4 py-2 rounded-lg bg-gray-800 text-gray-300 disabled:opacity-40 hover:bg-gray-700 text-sm">Tiếp →</button>
+                <button onClick={() => setPage(p=>Math.min(pages-1,p+1))} disabled={page>=pages-1} className="flex items-center justify-center px-4 py-2 rounded-lg bg-gray-800 text-gray-300 disabled:opacity-40 hover:bg-gray-700 text-sm"><IconChevronRight className="w-4 h-4" /></button>
               </div>
             )}
           </>

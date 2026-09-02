@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useI18n, searchLanguages, langDisplayName } from '../lib/i18n';
+import { IconGlobe } from './icons';
 
 // Bo doi ngon ngu giao dien web - danh sach hon 300 ngon ngu, co the go tim
 // theo ma (en, vi...) hoac ten (English, Tieng Viet...).
@@ -27,7 +28,7 @@ export default function LanguageSwitcher() {
         title={t('language_switcher_title')}
         className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800 whitespace-nowrap"
       >
-        <span>🌐</span>
+        <IconGlobe className="w-4 h-4" />
         <span className="hidden md:inline uppercase">{lang}</span>
       </button>
       {open && (

@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import PubLayout from '../../components/PubLayout';
 import { pubApi } from '../../lib/pubApi';
+import { IconHome, IconAlertTriangle, IconCheckCircle, IconXCircle, IconClock, IconGlobe, IconUsers, IconBookOpen, IconGamepad, IconTarget, IconTrophy, IconHash } from '../../components/icons';
 
-function Stat({ emoji, label, value, color='indigo' }) {
+function Stat({ Icon, label, value, color='indigo' }) {
   const clr = { indigo:'text-indigo-400', green:'text-green-400', blue:'text-blue-400', yellow:'text-yellow-400' }[color];
   return (
     <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
-      <div className="text-2xl mb-2">{emoji}</div>
+      <div className={`mb-2 ${clr}`}><Icon className="w-6 h-6" /></div>
       <div className={`text-3xl font-bold ${clr}`}>{value ?? '—'}</div>
       <div className="text-sm text-gray-400 mt-1">{label}</div>
     </div>
@@ -29,10 +30,10 @@ export default function PubHome() {
   const next    = m?.data?.find(x => !x.reached);
 
   return (
-    <PubLayout title="🏠 Trang Chủ">
+    <PubLayout title="Trang Chủ">
       {err && (
-        <div className="mb-6 p-4 bg-red-900/30 border border-red-700 rounded-lg text-red-400 text-sm">
-          ⚠️ Không kết nối được tới server bot ({err}). Vui lòng thử lại sau.
+        <div className="flex items-center gap-2 mb-6 p-4 bg-red-900/30 border border-red-700 rounded-lg text-red-400 text-sm">
+          <IconAlertTriangle className="w-4 h-4 flex-shrink-0" /> Không kết nối được tới server bot ({err}). Vui lòng thử lại sau.
         </div>
       )}
 
@@ -42,22 +43,22 @@ export default function PubHome() {
           s?.online ? 'bg-green-900/40 text-green-400 border-green-700' : 'bg-red-900/40 text-red-400 border-red-700'
         }`}>
           <span className={`w-2 h-2 rounded-full ${s?.online ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`} />
-          {s ? (s.online ? `✅ Bot Đang Online • ${s.latency_ms}ms` : '❌ Bot Offline') : '⏳ Đang kiểm tra...'}
+          {s ? (s.online ? <span className="flex items-center gap-1.5"><IconCheckCircle className="w-4 h-4" /> Bot Đang Online • {s.latency_ms}ms</span> : <span className="flex items-center gap-1.5"><IconXCircle className="w-4 h-4" /> Bot Offline</span>) : <span className="flex items-center gap-1.5"><IconClock className="w-4 h-4" /> Đang kiểm tra...</span>}
         </span>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-        <Stat emoji="🌐" label="Servers" value={s?.guild_count?.toLocaleString()} color="blue" />
-        <Stat emoji="👥" label="Thành viên" value={s?.user_count?.toLocaleString()} color="indigo" />
-        <Stat emoji="📚" label="Từ đã duyệt" value={s?.stats?.wordbank?.toLocaleString()} color="green" />
-        <Stat emoji="🎮" label="Lượt từ" value={s?.stats?.total_games_words?.toLocaleString()} color="yellow" />
+        <Stat Icon={IconGlobe} label="Servers" value={s?.guild_count?.toLocaleString()} color="blue" />
+        <Stat Icon={IconUsers} label="Thành viên" value={s?.user_count?.toLocaleString()} color="indigo" />
+        <Stat Icon={IconBookOpen} label="Từ đã duyệt" value={s?.stats?.wordbank?.toLocaleString()} color="green" />
+        <Stat Icon={IconGamepad} label="Lượt từ" value={s?.stats?.total_games_words?.toLocaleString()} color="yellow" />
       </div>
 
       {/* Milestones reached */}
       {reached.length > 0 && (
         <div className="mb-8">
-          <h2 className="text-lg font-bold text-white mb-3">🎯 Cột Mốc Đã Đạt</h2>
+          <h2 className="flex items-center gap-2 text-lg font-bold text-white mb-3"><IconTarget className="w-4.5 h-4.5 text-indigo-400" /> Cột Mốc Đã Đạt</h2>
           <div className="flex flex-wrap gap-2">
             {reached.map(r => (
               <span key={r.key} className="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-900/50 border border-indigo-700 rounded-full text-sm text-indigo-300">
@@ -72,7 +73,7 @@ export default function PubHome() {
       {next && (
         <div className="bg-gray-900 border border-gray-700 rounded-xl p-5 mb-10">
           <div className="flex justify-between items-center mb-2">
-            <span className="text-sm font-medium text-gray-300">{next.emoji} Tiếp theo: <strong>{next.label}</strong></span>
+            <span className="text-sm font-medium text-gray-300">Tiếp theo: <strong>{next.label}</strong></span>
             <span className="text-sm text-gray-500">{next.current?.toLocaleString()} / {next.target?.toLocaleString()}</span>
           </div>
           <div className="w-full bg-gray-800 rounded-full h-3">
@@ -85,15 +86,15 @@ export default function PubHome() {
       {/* Quick links */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { href:'/pub/leaderboard', emoji:'🏆', label:'Bảng Xếp Hạng' },
-          { href:'/pub/wordbank',    emoji:'📚', label:'Kho Từ' },
-          { href:'/pub/servers',     emoji:'🌐', label:'Servers' },
-          { href:'/pub/play',        emoji:'🎮', label:'Chơi Online' },
-          { href:'/pub/2048',        emoji:'🔢', label:'2048' },
+          { href:'/pub/leaderboard', Icon:IconTrophy, label:'Bảng Xếp Hạng' },
+          { href:'/pub/wordbank',    Icon:IconBookOpen, label:'Kho Từ' },
+          { href:'/pub/servers',     Icon:IconGlobe, label:'Servers' },
+          { href:'/pub/play',        Icon:IconGamepad, label:'Chơi Online' },
+          { href:'/pub/2048',        Icon:IconHash, label:'2048' },
         ].map(l => (
           <a key={l.href} href={l.href}
             className="flex flex-col items-center gap-2 p-5 bg-gray-900 border border-gray-800 rounded-xl hover:border-indigo-500 hover:bg-gray-800 transition-colors text-center">
-            <span className="text-3xl">{l.emoji}</span>
+            <l.Icon className="w-7 h-7 text-indigo-400" />
             <span className="text-sm font-medium text-gray-300">{l.label}</span>
           </a>
         ))}

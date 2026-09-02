@@ -2,17 +2,18 @@ import { useEffect, useState } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import PubLayout from '../../components/PubLayout';
+import { IconUser, IconKey, IconShieldCheck, IconLogOut, IconDot, IconCheckCircle, IconInfo, IconShield, IconEye, IconEyeOff } from '../../components/icons';
 
 const PROVIDER_BADGE = {
-  google:      { label: 'Google',    emoji: '🔵', cls: 'bg-blue-900/40 text-blue-300 border-blue-700' },
-  github:      { label: 'GitHub',    emoji: '⚫', cls: 'bg-gray-800 text-gray-300 border-gray-600' },
-  discord:     { label: 'Discord',   emoji: '🟣', cls: 'bg-indigo-900/50 text-indigo-300 border-indigo-700' },
-  credentials: { label: 'Email',     emoji: '📧', cls: 'bg-yellow-900/40 text-yellow-300 border-yellow-700' },
+  google:      { label: 'Google',    dot: 'text-blue-400',   cls: 'bg-blue-900/40 text-blue-300 border-blue-700' },
+  github:      { label: 'GitHub',    dot: 'text-gray-300',   cls: 'bg-gray-800 text-gray-300 border-gray-600' },
+  discord:     { label: 'Discord',   dot: 'text-indigo-400', cls: 'bg-indigo-900/50 text-indigo-300 border-indigo-700' },
+  credentials: { label: 'Email',     dot: 'text-yellow-400', cls: 'bg-yellow-900/40 text-yellow-300 border-yellow-700' },
 };
 
-const Card = ({ title, children }) => (
+const Card = ({ title, Icon, children }) => (
   <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 space-y-5">
-    <h2 className="text-base font-bold text-white">{title}</h2>
+    <h2 className="flex items-center gap-2 text-base font-bold text-white">{Icon && <Icon className="w-4.5 h-4.5 text-indigo-400" />} {title}</h2>
     {children}
   </div>
 );
@@ -79,7 +80,7 @@ export default function AccountPage() {
       });
       const d = await r.json();
       if (r.ok) {
-        setPwMsg({ type:'ok', text: '✅ Đổi mật khẩu thành công!' });
+        setPwMsg({ type:'ok', text: 'Đổi mật khẩu thành công!' });
         setOldPw(''); setNewPw(''); setNewPw2('');
         setInfo(prev => ({ ...prev, has_password: true }));
       } else { setPwMsg({ type:'err', text: d.error || 'Thất bại' }); }
@@ -108,7 +109,7 @@ export default function AccountPage() {
       });
       const d = await r.json();
       if (r.ok) {
-        setTfaMsg({ type:'ok', text: '🔐 2FA đã được bật!' });
+        setTfaMsg({ type:'ok', text: '2FA đã được bật!' });
         setTfaStep('idle'); setTfaCode(''); setTfaData(null);
         setInfo(prev => ({ ...prev, totp_enabled: true }));
       } else { setTfaMsg({ type:'err', text: d.error || 'Mã OTP sai' }); }
@@ -126,7 +127,7 @@ export default function AccountPage() {
       });
       const d = await r.json();
       if (r.ok) {
-        setTfaMsg({ type:'ok', text: '✅ Đã tắt 2FA.' });
+        setTfaMsg({ type:'ok', text: 'Đã tắt 2FA.' });
         setTfaStep('idle'); setTfaCode(''); setTfaPw('');
         setInfo(prev => ({ ...prev, totp_enabled: false }));
       } else { setTfaMsg({ type:'err', text: d.error || 'Xác thực thất bại' }); }
@@ -157,7 +158,7 @@ export default function AccountPage() {
       <div className="max-w-xl mx-auto space-y-6">
 
         {/* Profile */}
-        <Card title="👤 Hồ sơ">
+        <Card title="Hồ sơ" Icon={IconUser}>
           <div className="flex items-center gap-4">
             {user.image
               ? <img src={user.image} className="w-16 h-16 rounded-full object-cover border-2 border-gray-700" alt="avatar"/>
@@ -171,17 +172,17 @@ export default function AccountPage() {
                 <div className="text-sm text-gray-400">{user.email}</div>
               )}
               <span className={`inline-flex items-center gap-1.5 mt-1.5 text-xs px-2.5 py-0.5 rounded-full border ${badge.cls}`}>
-                {badge.emoji} {badge.label}
+                <IconDot className={`w-2 h-2 ${badge.dot}`} /> {badge.label}
               </span>
             </div>
           </div>
         </Card>
 
         {/* Change / Set Password */}
-        <Card title={hasPassword ? '🔑 Đổi mật khẩu' : '🔑 Đặt mật khẩu'}>
+        <Card title={hasPassword ? 'Đổi mật khẩu' : 'Đặt mật khẩu'} Icon={IconKey}>
           {!hasPassword && provider !== 'credentials' && (
-            <div className="p-3 bg-indigo-900/20 border border-indigo-800 rounded-xl text-indigo-300 text-sm">
-              ℹ️ Bạn đăng nhập qua {badge.label}. Đặt mật khẩu để cũng có thể đăng nhập bằng email!
+            <div className="flex items-start gap-2 p-3 bg-indigo-900/20 border border-indigo-800 rounded-xl text-indigo-300 text-sm">
+              <IconInfo className="w-4 h-4 flex-shrink-0 mt-0.5" /> Bạn đăng nhập qua {badge.label}. Đặt mật khẩu để cũng có thể đăng nhập bằng email!
             </div>
           )}
           <p className="text-sm text-gray-400">
@@ -193,7 +194,7 @@ export default function AccountPage() {
                 <div className="relative">
                   <Inp type={showPw?'text':'password'} placeholder="Mật khẩu cũ" value={oldPw} onChange={e=>setOldPw(e.target.value)} />
                   <button type="button" onClick={()=>setShowPw(s=>!s)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 text-xs">{showPw?'Ẩn':'Hiện'}</button>
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300">{showPw?<IconEyeOff className="w-4 h-4" />:<IconEye className="w-4 h-4" />}</button>
                 </div>
               </Field>
             )}
@@ -214,21 +215,21 @@ export default function AccountPage() {
         </Card>
 
         {/* 2FA */}
-        <Card title="🔐 Xác thực 2 bước (2FA)">
+        <Card title="Xác thực 2 bước (2FA)" Icon={IconShieldCheck}>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-300 font-medium">
+              <p className="flex items-center gap-1.5 text-sm text-gray-300 font-medium">
                 Trạng thái:{' '}
                 {twoFAEnabled
-                  ? <span className="text-green-400">✅ Đang bật</span>
-                  : <span className="text-gray-500">⚪ Chưa bật</span>}
+                  ? <span className="flex items-center gap-1 text-green-400"><IconCheckCircle className="w-4 h-4" /> Đang bật</span>
+                  : <span className="flex items-center gap-1 text-gray-500"><IconDot className="w-2.5 h-2.5" /> Chưa bật</span>}
               </p>
               <p className="text-xs text-gray-500 mt-0.5">Bảo vệ bằng Google Authenticator / Authy.</p>
             </div>
             {twoFAEnabled
               ? <Btn onClick={()=>{setTfaStep('disable');setTfaMsg({type:'',text:''});}} cls="bg-red-900/50 hover:bg-red-800 text-red-300 border border-red-800">Tắt 2FA</Btn>
-              : <Btn onClick={handleSetup2FA} disabled={tfaLoad} cls="bg-indigo-600 hover:bg-indigo-500 text-white">
-                  {tfaLoad&&tfaStep==='idle'?'...':'🛡️ Bật 2FA'}
+              : <Btn onClick={handleSetup2FA} disabled={tfaLoad} cls="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white">
+                  <IconShield className="w-4 h-4" /> {tfaLoad&&tfaStep==='idle'?'...':'Bật 2FA'}
                 </Btn>
             }
           </div>
@@ -251,8 +252,8 @@ export default function AccountPage() {
                   <input value={tfaCode} onChange={e=>setTfaCode(e.target.value.replace(/\D/g,'').slice(0,6))}
                     placeholder="000000" maxLength={6}
                     className="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white text-center font-mono text-xl tracking-widest focus:outline-none focus:border-indigo-500"/>
-                  <Btn onClick={handleEnable2FA} disabled={tfaCode.length!==6||tfaLoad} cls="bg-green-700 hover:bg-green-600 text-white">
-                    {tfaLoad?'...':'✓ Xác nhận'}
+                  <Btn onClick={handleEnable2FA} disabled={tfaCode.length!==6||tfaLoad} cls="flex items-center gap-1.5 bg-green-700 hover:bg-green-600 text-white">
+                    <IconCheckCircle className="w-4 h-4" /> {tfaLoad?'...':'Xác nhận'}
                   </Btn>
                 </div>
                 <button onClick={()=>{setTfaStep('idle');setTfaData(null);setTfaCode('');}} className="text-xs text-gray-500 hover:text-gray-400">Hủy</button>
@@ -278,10 +279,10 @@ export default function AccountPage() {
         </Card>
 
         {/* Logout */}
-        <Card title="🚪 Phiên đăng nhập">
+        <Card title="Phiên đăng nhập" Icon={IconLogOut}>
           <p className="text-sm text-gray-400">Đang đăng nhập: <strong className="text-white">{user.username || user.name}</strong></p>
-          <Btn onClick={() => signOut({ callbackUrl: '/auth/login' })} cls="bg-gray-800 hover:bg-red-900/50 hover:border-red-800 text-gray-300 hover:text-red-300 border border-gray-700 w-full">
-            🚪 Đăng xuất
+          <Btn onClick={() => signOut({ callbackUrl: '/auth/login' })} cls="flex items-center justify-center gap-2 bg-gray-800 hover:bg-red-900/50 hover:border-red-800 text-gray-300 hover:text-red-300 border border-gray-700 w-full">
+            <IconLogOut className="w-4 h-4" /> Đăng xuất
           </Btn>
         </Card>
 

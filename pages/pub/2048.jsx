@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import PubLayout from '../../components/PubLayout';
+import { IconPartyPopper, IconFrown, IconRefresh } from '../../components/icons';
 
 // Game 2048 - thuan client-side, khong can goi API bot. Diem cao nhat luu
 // trong localStorage cua trinh duyet.
@@ -186,19 +187,19 @@ export default function Game2048() {
   const showOverlay = gameOver || (won && !keepPlaying);
 
   return (
-    <PubLayout title="🔢 2048">
+    <PubLayout title="2048">
       <div className="max-w-md mx-auto">
         <div className="flex items-start justify-between gap-3 mb-4">
           <p className="text-gray-500 text-sm flex-1">
-            Dùng phím mũi tên (hoệc WASD) trên máy tính, våuằt trên di động để dớn các ô số giống nhau lại với nhau. Đạt ô <strong className="text-white">2048</strong> là thắng!
+            Dung phim mui ten (hoac WASD) tren may tinh, vuot tren di dong de don cac o so giong nhau lai voi nhau. Dat o <strong className="text-white">2048</strong> la thang!
           </p>
           <div className="flex gap-2 flex-shrink-0">
             <div className="bg-gray-900 border border-gray-800 rounded-lg px-3 py-2 text-center min-w-[64px]">
-              <div className="text-[10px] text-gray-500 uppercase tracking-wide">Điểm</div>
+              <div className="text-[10px] text-gray-500 uppercase tracking-wide">Diem</div>
               <div className="text-lg font-bold text-white">{score}</div>
             </div>
             <div className="bg-gray-900 border border-gray-800 rounded-lg px-3 py-2 text-center min-w-[64px]">
-              <div className="text-[10px] text-gray-500 uppercase tracking-wide">Kỷ lục</div>
+              <div className="text-[10px] text-gray-500 uppercase tracking-wide">Ky luc</div>
               <div className="text-lg font-bold text-indigo-400">{best}</div>
             </div>
           </div>
@@ -222,8 +223,8 @@ export default function Game2048() {
 
           {showOverlay && (
             <div className="absolute inset-0 bg-gray-950/85 rounded-2xl flex flex-col items-center justify-center gap-4 backdrop-blur-sm">
-              <div className="text-2xl font-bold text-white">
-                {won ? '🎉 Bạn thằng rối!' : '💀 Thua rối!'}
+              <div className="flex items-center gap-2 text-2xl font-bold text-white">
+                {won ? <><IconPartyPopper className="w-7 h-7 text-yellow-400" /> Ban thang roi!</> : <><IconFrown className="w-7 h-7 text-gray-400" /> Thua roi!</>}
               </div>
               <div className="flex gap-2">
                 {won && !gameOver && (
@@ -231,14 +232,14 @@ export default function Game2048() {
                     onClick={() => setKeepPlaying(true)}
                     className="px-4 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white rounded-lg text-sm font-medium"
                   >
-                    Chơi tiếp
+                    Choi tiep
                   </button>
                 )}
                 <button
                   onClick={newGame}
                   className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-semibold"
                 >
-                  Chơi lại
+                  Choi lai
                 </button>
               </div>
             </div>
@@ -248,9 +249,9 @@ export default function Game2048() {
         <div className="mt-5 flex justify-center">
           <button
             onClick={newGame}
-            className="px-6 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white rounded-lg text-sm font-medium"
+            className="flex items-center gap-2 px-6 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white rounded-lg text-sm font-medium"
           >
-            🔄 Chơi lại từ đầu
+            <IconRefresh className="w-4 h-4" /> Choi lai tu dau
           </button>
         </div>
       </div>

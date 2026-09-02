@@ -4,6 +4,7 @@ import { useSession } from 'next-auth/react';
 import PubLayout from '../../../components/PubLayout';
 import { getWsUrl, pubApi } from '../../../lib/pubApi';
 import { useI18n } from '../../../lib/i18n';
+import { IconLock, IconLogIn, IconGamepad, IconPlay, IconUsers, IconHeart, IconHeartOff, IconLightbulb, IconCheckCircle, IconAlertTriangle, IconClock, IconArrowRight, IconLink, IconCopy, IconCheck, IconTrophy, IconMedal } from '../../../components/icons';
 
 export default function GameRoom() {
   const router = useRouter();
@@ -134,12 +135,12 @@ export default function GameRoom() {
   if (authStatus !== 'authenticated') return (
     <PubLayout title="Vao Phong">
       <div className="max-w-sm mx-auto mt-10 bg-gray-900 border border-gray-700 rounded-2xl p-8 text-center">
-        <div className="text-4xl mb-3">🔒</div>
+        <div className="flex justify-center mb-3 text-gray-400"><IconLock className="w-9 h-9" /></div>
         <h2 className="text-lg font-bold text-white mb-2">{t('need_login_title')}</h2>
         <p className="text-gray-500 text-sm mb-6">{t('need_login_desc')}</p>
         <button onClick={()=>router.push('/auth/login?callbackUrl=' + encodeURIComponent('/pub/play/' + roomId))}
-          className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg">
-          🔑 {t('login_button')}
+          className="flex items-center justify-center gap-2 w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg">
+          <IconLogIn className="w-4.5 h-4.5" /> {t('login_button')}
         </button>
       </div>
     </PubLayout>
@@ -150,21 +151,21 @@ export default function GameRoom() {
     const suggestedName = session?.user?.username || session?.user?.name || 'Nguoi choi';
     return (
       <PubLayout title="Vao Phong">
-        {error && <div className="mb-4 p-3 bg-red-900/30 border border-red-700 rounded-lg text-red-400 text-sm">{error}</div>}
+        {error && <div className="flex items-center gap-2 mb-4 p-3 bg-red-900/30 border border-red-700 rounded-lg text-red-400 text-sm"><IconAlertTriangle className="w-4 h-4" /> {error}</div>}
         <div className="max-w-sm mx-auto mt-10">
           <div className="bg-gray-900 border border-gray-700 rounded-2xl p-8">
             <div className="text-center mb-6">
-              <div className="text-4xl mb-2">🎮</div>
+              <div className="flex justify-center mb-2 text-indigo-400"><IconGamepad className="w-9 h-9" /></div>
               <h2 className="text-xl font-bold text-white">Noi Tu Online</h2>
               <p className="text-gray-500 text-sm mt-1">Phong: <code className="text-indigo-400 font-mono">{roomId}</code></p>
             </div>
             <div className="text-center mb-5 p-3 bg-gray-800 rounded-lg">
-              <div className="text-xs text-gray-500">Vào phong với tài khoản</div>
+              <div className="text-xs text-gray-500">Vao phong voi tai khoan</div>
               <div className="text-white font-semibold">{suggestedName}</div>
             </div>
             <button onClick={()=>connect(suggestedName)}
-              className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white font-semibold rounded-lg text-lg">
-              {t('enter_room_button')}
+              className="flex items-center justify-center gap-2 w-full py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white font-semibold rounded-lg text-lg">
+              <IconPlay className="w-5 h-5" /> {t('enter_room_button')}
             </button>
           </div>
         </div>
@@ -185,7 +186,7 @@ export default function GameRoom() {
         <div className="space-y-3">
           <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="font-bold text-white text-sm">{t('players_label')} ({gs?.players?.length||0})</h3>
+              <h3 className="flex items-center gap-1.5 font-bold text-white text-sm"><IconUsers className="w-4 h-4" /> {t('players_label')} ({gs?.players?.length||0})</h3>
               <span className={`text-xs px-2 py-0.5 rounded-full ${connected?'bg-green-900/50 text-green-400':'bg-red-900/50 text-red-400'}`}>
                 {connected?t('online'):t('offline')}
               </span>
@@ -197,12 +198,15 @@ export default function GameRoom() {
                   : p.name===myName ? 'bg-gray-800' : 'bg-gray-800/40'
                 }`}>
                   <div className="flex items-center gap-2 min-w-0">
-                    {p.name===gs.current_turn&&phase==='playing'&&<span className="animate-pulse text-xs">▶️</span>}
+                    {p.name===gs.current_turn&&phase==='playing'&&<IconArrowRight className="w-3.5 h-3.5 text-indigo-400 animate-pulse flex-shrink-0" />}
                     <span className="text-sm text-white truncate">{p.name}</span>
                     {p.name===myName&&<span className="text-xs text-gray-500">(ban)</span>}
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    <span className="text-xs">{'❤️'.repeat(p.lives)}{'💔'.repeat(Math.max(0,3-p.lives))}</span>
+                    <span className="flex items-center gap-0.5">
+                      {Array.from({length:p.lives}).map((_,li)=><IconHeart key={'h'+li} className="w-3.5 h-3.5 text-red-400" />)}
+                      {Array.from({length:Math.max(0,3-p.lives)}).map((_,li)=><IconHeartOff key={'e'+li} className="w-3.5 h-3.5 text-gray-700" />)}
+                    </span>
                     <span className="text-sm font-bold text-indigo-400">{p.score}pt</span>
                   </div>
                 </div>
@@ -210,8 +214,8 @@ export default function GameRoom() {
             </div>
           </div>
           <button onClick={()=>{navigator.clipboard.writeText(window.location.href);setCopyOk(true);setTimeout(()=>setCopyOk(false),2000);}}
-            className="w-full py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg text-sm text-gray-400">
-            {copyOk?t('copied'):t('copy_link')}
+            className="flex items-center justify-center gap-2 w-full py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg text-sm text-gray-400">
+            {copyOk?<><IconCheck className="w-4 h-4" /> {t('copied')}</>:<><IconCopy className="w-4 h-4" /> {t('copy_link')}</>}
           </button>
         </div>
 
@@ -238,11 +242,11 @@ export default function GameRoom() {
               <div className="text-sm text-indigo-400">{t('start_with_label')}: <strong className="text-xl">"{gs?.last_char}"</strong></div>
               {hint && hint.syllable===gs?.last_char && (
                 hint.can_continue ? (
-                  <div className="mt-3 text-xs text-green-400">
-                    ✅ Con noi duoc: {hint.words.map((w,i)=>(<code key={i} className="mx-1 px-1.5 py-0.5 bg-green-900/40 rounded">{w}</code>))}
+                  <div className="flex items-center flex-wrap justify-center gap-1 mt-3 text-xs text-green-400">
+                    <IconCheckCircle className="w-3.5 h-3.5" /> Con noi duoc: {hint.words.map((w,i)=>(<code key={i} className="mx-1 px-1.5 py-0.5 bg-green-900/40 rounded">{w}</code>))}
                   </div>
                 ) : (
-                  <div className="mt-3 text-xs text-yellow-400">⚠️ Chua tim thay tu nao noi tiep duoc — co the sap bi tu!</div>
+                  <div className="flex items-center justify-center gap-1.5 mt-3 text-xs text-yellow-400"><IconAlertTriangle className="w-3.5 h-3.5" /> Chua tim thay tu nao noi tiep duoc — co the sap bi tu!</div>
                 )
               )}
             </div>
@@ -251,13 +255,13 @@ export default function GameRoom() {
           {/* Waiting */}
           {phase==='waiting'&&(
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-8 text-center">
-              <div className="text-3xl mb-2">⏳</div>
+              <div className="flex justify-center mb-2 text-gray-400"><IconClock className="w-8 h-8" /></div>
               <h2 className="text-lg font-semibold text-white mb-1">{t('waiting_title')}</h2>
               <p className="text-gray-500 text-sm mb-5">{gs?.players?.length||0} nguoi da vao phong.</p>
               {isHost&&(
                 <button onClick={()=>send({type:'start'})}
-                  className="px-8 py-3 bg-green-700 hover:bg-green-600 text-white font-semibold rounded-lg text-lg">
-                  {t('start_game_button')}
+                  className="flex items-center justify-center gap-2 mx-auto px-8 py-3 bg-green-700 hover:bg-green-600 text-white font-semibold rounded-lg text-lg">
+                  <IconPlay className="w-5 h-5" /> {t('start_game_button')}
                 </button>
               )}
               {!isHost&&<p className="text-gray-600 text-sm">{t('waiting_host')}</p>}
@@ -267,12 +271,12 @@ export default function GameRoom() {
           {/* Ended */}
           {phase==='ended'&&(
             <div className="bg-gray-900 border border-indigo-700 rounded-xl p-6 text-center">
-              <div className="text-4xl mb-2">🏆</div>
+              <div className="flex justify-center mb-2 text-yellow-400"><IconTrophy className="w-9 h-9" /></div>
               <h2 className="text-2xl font-bold text-white mb-4">{gs?.winner?gs.winner+' '+t('winner_suffix'):t('ended_title')}</h2>
               <div className="space-y-2 mb-4">
                 {gs?.scores?.map((p,i)=>(
-                  <div key={i} className="flex justify-between px-4 py-2 bg-gray-800 rounded-lg">
-                    <span className="text-white">{i===0?'🥇 ':i===1?'🥈 ':i===2?'🥉 ':`${i+1}. `}{p.name}</span>
+                  <div key={i} className="flex justify-between items-center px-4 py-2 bg-gray-800 rounded-lg">
+                    <span className="flex items-center gap-1.5 text-white">{i<3?<IconMedal className={`w-4 h-4 ${i===0?'text-yellow-400':i===1?'text-gray-300':'text-orange-400'}`} />:<span className="text-gray-500 text-xs">{i+1}.</span>} {p.name}</span>
                     <span className="text-indigo-400 font-bold">{p.score} diem</span>
                   </div>
                 ))}
@@ -291,14 +295,14 @@ export default function GameRoom() {
                 placeholder={isMyTurn?(checking?t('checking_word'):`${t('start_with_label')} "${gs?.last_char}"...`):t('not_your_turn')}
                 disabled={!isMyTurn||checking} value={wordInput} onChange={e=>setWord(e.target.value)}/>
               <button type="submit" disabled={!isMyTurn||!wordInput.trim()||checking}
-                className="px-5 py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white font-bold rounded-lg text-xl">
-                {checking?'⏳':'➔'}
+                className="flex items-center justify-center px-5 py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white font-bold rounded-lg text-xl">
+                {checking?<IconClock className="w-5 h-5 animate-pulse" />:<IconArrowRight className="w-5 h-5" />}
               </button>
               <button type="button" title={t('hint_title')}
                 disabled={hintLoading||checking||!gs?.last_char}
                 onClick={()=>{setHintLoading(true);setHint(null);send({type:'hint'});}}
-                className="px-4 py-3 bg-gray-800 hover:bg-gray-700 disabled:opacity-40 border border-gray-700 text-white rounded-lg text-sm">
-                {hintLoading?'⏳':`💡 ${t('hint_button')}`}
+                className="flex items-center gap-1.5 px-4 py-3 bg-gray-800 hover:bg-gray-700 disabled:opacity-40 border border-gray-700 text-white rounded-lg text-sm">
+                <IconLightbulb className={`w-4 h-4 ${hintLoading?'animate-pulse':''}`} /> {t('hint_button')}
               </button>
             </form>
           )}

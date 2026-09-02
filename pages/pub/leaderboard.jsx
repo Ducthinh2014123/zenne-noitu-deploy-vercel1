@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import PubLayout from '../../components/PubLayout';
 import { pubApi } from '../../lib/pubApi';
+import { IconTrophy, IconAlertTriangle, IconMessageCircle, IconFlame, IconMedal } from '../../components/icons';
 
-const MEDALS = ['🥇','🥈','🥉'];
+const MEDAL_COLORS = ['text-yellow-400', 'text-gray-300', 'text-orange-400'];
 
 export default function PubLeaderboard() {
   const [data, setData]   = useState([]);
@@ -23,14 +24,14 @@ export default function PubLeaderboard() {
   const switchMode = (m) => { setMode(m); load(m); };
 
   return (
-    <PubLayout title="🏆 Bảng Xếp Hạng">
-      {err && <div className="mb-4 p-3 bg-red-900/30 border border-red-700 rounded-lg text-red-400 text-sm">⚠️ {err}</div>}
+    <PubLayout title="Bảng Xếp Hạng">
+      {err && <div className="flex items-center gap-2 mb-4 p-3 bg-red-900/30 border border-red-700 rounded-lg text-red-400 text-sm"><IconAlertTriangle className="w-4 h-4" /> {err}</div>}
       <div className="flex gap-2 mb-6">
-        {[{id:'words',label:'💬 Số Từ'},{id:'streak',label:'🔥 Streak'}].map(b => (
+        {[{id:'words',label:'Số Từ',Icon:IconMessageCircle},{id:'streak',label:'Streak',Icon:IconFlame}].map(b => (
           <button key={b.id} onClick={() => switchMode(b.id)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               mode===b.id ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-            }`}>{b.label}</button>
+            }`}><b.Icon className="w-4 h-4" /> {b.label}</button>
         ))}
       </div>
       {loading
@@ -44,7 +45,7 @@ export default function PubLeaderboard() {
                 : i===2 ? 'bg-orange-900/20 border-orange-700/50'
                 : 'bg-gray-900 border-gray-800'
               }`}>
-                <div className="w-8 text-center text-lg font-bold">{MEDALS[i] ?? <span className="text-gray-500 text-sm">#{i+1}</span>}</div>
+                <div className="w-8 flex justify-center">{i<3 ? <IconMedal className={`w-5 h-5 ${MEDAL_COLORS[i]}`} /> : <span className="text-gray-500 text-sm">#{i+1}</span>}</div>
                 {p.avatar
                   ? <img src={p.avatar} alt={p.name} className="w-10 h-10 rounded-full object-cover"/>
                   : <div className="w-10 h-10 rounded-full bg-indigo-800 flex items-center justify-center text-white font-bold flex-shrink-0">{(p.name||'?')[0].toUpperCase()}</div>
