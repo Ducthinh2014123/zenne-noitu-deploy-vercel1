@@ -89,6 +89,7 @@ export default function PubHome() {
           { href:'/pub/wordbank',    emoji:'📚', label:'Kho Từ' },
           { href:'/pub/servers',     emoji:'🌐', label:'Servers' },
           { href:'/pub/play',        emoji:'🎮', label:'Chơi Online' },
+          { href:'/pub/2048',        emoji:'🔢', label:'2048' },
         ].map(l => (
           <a key={l.href} href={l.href}
             className="flex flex-col items-center gap-2 p-5 bg-gray-900 border border-gray-800 rounded-xl hover:border-indigo-500 hover:bg-gray-800 transition-colors text-center">

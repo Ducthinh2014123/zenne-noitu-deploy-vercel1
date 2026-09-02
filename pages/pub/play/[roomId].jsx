@@ -3,11 +3,13 @@ import { useRouter } from 'next/router';
 import { useSession } from 'next-auth/react';
 import PubLayout from '../../../components/PubLayout';
 import { getWsUrl, pubApi } from '../../../lib/pubApi';
+import { useI18n } from '../../../lib/i18n';
 
 export default function GameRoom() {
   const router = useRouter();
   const { roomId } = router.query;
   const { data: session, status: authStatus } = useSession();
+  const { t } = useI18n();
   const wsRef    = useRef(null);
   const timerRef = useRef(null);
   const logRef   = useRef(null);
@@ -26,6 +28,8 @@ export default function GameRoom() {
   const [copyOk, setCopyOk]     = useState(false);
   const [error, setError]       = useState('');
   const [checking, setChecking] = useState(false);
+  const [hint, setHint]         = useState(null); // { syllable, can_continue, words }
+  const [hintLoading, setHintLoading] = useState(false);
 
   const addLog = useCallback((text, ok=true) => {
     setLog(prev => [...prev.slice(-99), { text, ok }]);
@@ -67,11 +71,15 @@ export default function GameRoom() {
       } else if (t==='state') {
         setGs(d);
       } else if (t==='game_start') {
-        setGs(d); setPhase('playing'); startTick(d.time_limit||30);
+        setGs(d); setPhase('playing'); startTick(d.time_limit||30); setHint(null);
         addLog('Game bat dau! Tu dau: "' + d.current_word + '"');
       } else if (t==='word_accepted') {
         setChecking(false);
-        setGs(prev=>prev?({...prev,current_word:d.word,last_char:d.word.slice(-1)}):prev);
+        setHint(null);
+        // Dung am tiet cuoi cung (tach theo khoang trang), khong phai ky tu cuoi cung,
+        // de khop voi cach server tinh last_char va tranh hien thi sai luc co luc khong.
+        const parts = d.word.trim().split(/\s+/);
+        setGs(prev=>prev?({...prev,current_word:d.word,last_char:parts[parts.length-1]}):prev);
         startTick(timeLimit); addLog(d.player + ': ' + d.word + ' (+' + d.score + ')');
       } else if (t==='checking') {
         setChecking(true);
@@ -101,6 +109,9 @@ export default function GameRoom() {
       } else if (t==='restarted') {
         setPhase('waiting'); clearInterval(timerRef.current); setTimer(0);
         addLog('Game khoi dong lai.');
+      } else if (t==='hint_result') {
+        setHintLoading(false);
+        setHint({ syllable: d.syllable, can_continue: d.can_continue, words: d.words||[] });
       } else if (t==='error') {
         setChecking(false);
         flash_(d.msg, false);
@@ -124,11 +135,11 @@ export default function GameRoom() {
     <PubLayout title="Vao Phong">
       <div className="max-w-sm mx-auto mt-10 bg-gray-900 border border-gray-700 rounded-2xl p-8 text-center">
         <div className="text-4xl mb-3">🔒</div>
-        <h2 className="text-lg font-bold text-white mb-2">Cần đăng nhập để vào phòng</h2>
-        <p className="text-gray-500 text-sm mb-6">Đăng nhập để điểm của bạn được ghi vào bảng xếp hạng chung.</p>
+        <h2 className="text-lg font-bold text-white mb-2">{t('need_login_title')}</h2>
+        <p className="text-gray-500 text-sm mb-6">{t('need_login_desc')}</p>
         <button onClick={()=>router.push('/auth/login?callbackUrl=' + encodeURIComponent('/pub/play/' + roomId))}
           className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg">
-          🔑 Đăng nhập
+          🔑 {t('login_button')}
         </button>
       </div>
     </PubLayout>
@@ -153,7 +164,7 @@ export default function GameRoom() {
             </div>
             <button onClick={()=>connect(suggestedName)}
               className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white font-semibold rounded-lg text-lg">
-              Vao phong!
+              {t('enter_room_button')}
             </button>
           </div>
         </div>
@@ -174,9 +185,9 @@ export default function GameRoom() {
         <div className="space-y-3">
           <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="font-bold text-white text-sm">Nguoi choi ({gs?.players?.length||0})</h3>
+              <h3 className="font-bold text-white text-sm">{t('players_label')} ({gs?.players?.length||0})</h3>
               <span className={`text-xs px-2 py-0.5 rounded-full ${connected?'bg-green-900/50 text-green-400':'bg-red-900/50 text-red-400'}`}>
-                {connected?'Online':'Offline'}
+                {connected?t('online'):t('offline')}
               </span>
             </div>
             <div className="space-y-2">
@@ -200,7 +211,7 @@ export default function GameRoom() {
           </div>
           <button onClick={()=>{navigator.clipboard.writeText(window.location.href);setCopyOk(true);setTimeout(()=>setCopyOk(false),2000);}}
             className="w-full py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg text-sm text-gray-400">
-            {copyOk?'Copied!':'Copy link moi'}
+            {copyOk?t('copied'):t('copy_link')}
           </button>
         </div>
 
@@ -222,9 +233,18 @@ export default function GameRoom() {
           {/* Current word */}
           {phase==='playing'&&(
             <div className="bg-gray-900 border border-gray-700 rounded-xl p-5 text-center">
-              <div className="text-xs text-gray-500 mb-1">Tu hien tai</div>
+              <div className="text-xs text-gray-500 mb-1">{t('current_word_label')}</div>
               <div className="text-4xl font-bold text-white mb-2 tracking-wide">{gs?.current_word||'...'}</div>
-              <div className="text-sm text-indigo-400">Bat dau bang: <strong className="text-xl">"{gs?.last_char}"</strong></div>
+              <div className="text-sm text-indigo-400">{t('start_with_label')}: <strong className="text-xl">"{gs?.last_char}"</strong></div>
+              {hint && hint.syllable===gs?.last_char && (
+                hint.can_continue ? (
+                  <div className="mt-3 text-xs text-green-400">
+                    ✅ Con noi duoc: {hint.words.map((w,i)=>(<code key={i} className="mx-1 px-1.5 py-0.5 bg-green-900/40 rounded">{w}</code>))}
+                  </div>
+                ) : (
+                  <div className="mt-3 text-xs text-yellow-400">⚠️ Chua tim thay tu nao noi tiep duoc — co the sap bi tu!</div>
+                )
+              )}
             </div>
           )}
 
@@ -232,15 +252,15 @@ export default function GameRoom() {
           {phase==='waiting'&&(
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-8 text-center">
               <div className="text-3xl mb-2">⏳</div>
-              <h2 className="text-lg font-semibold text-white mb-1">Cho bat dau...</h2>
+              <h2 className="text-lg font-semibold text-white mb-1">{t('waiting_title')}</h2>
               <p className="text-gray-500 text-sm mb-5">{gs?.players?.length||0} nguoi da vao phong.</p>
               {isHost&&(
                 <button onClick={()=>send({type:'start'})}
                   className="px-8 py-3 bg-green-700 hover:bg-green-600 text-white font-semibold rounded-lg text-lg">
-                  Bat dau game!
+                  {t('start_game_button')}
                 </button>
               )}
-              {!isHost&&<p className="text-gray-600 text-sm">Doi host bat dau...</p>}
+              {!isHost&&<p className="text-gray-600 text-sm">{t('waiting_host')}</p>}
             </div>
           )}
 
@@ -248,7 +268,7 @@ export default function GameRoom() {
           {phase==='ended'&&(
             <div className="bg-gray-900 border border-indigo-700 rounded-xl p-6 text-center">
               <div className="text-4xl mb-2">🏆</div>
-              <h2 className="text-2xl font-bold text-white mb-4">{gs?.winner?gs.winner+' chien thang!':'Ket thuc!'}</h2>
+              <h2 className="text-2xl font-bold text-white mb-4">{gs?.winner?gs.winner+' '+t('winner_suffix'):t('ended_title')}</h2>
               <div className="space-y-2 mb-4">
                 {gs?.scores?.map((p,i)=>(
                   <div key={i} className="flex justify-between px-4 py-2 bg-gray-800 rounded-lg">
@@ -257,7 +277,7 @@ export default function GameRoom() {
                   </div>
                 ))}
               </div>
-              {isHost&&<button onClick={()=>send({type:'restart'})} className="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg">Choi lai</button>}
+              {isHost&&<button onClick={()=>send({type:'restart'})} className="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg">{t('play_again')}</button>}
             </div>
           )}
 
@@ -268,18 +288,24 @@ export default function GameRoom() {
                 className={`flex-1 bg-gray-800 border rounded-lg px-4 py-3 text-white text-lg placeholder-gray-600 focus:outline-none transition-colors ${
                   isMyTurn&&!checking?'border-indigo-500':'border-gray-700 opacity-60'
                 }`}
-                placeholder={isMyTurn?(checking?'Dang kiem tra tu...':`Bat dau bang "${gs?.last_char}"...`):'Chua den luot ban'}
+                placeholder={isMyTurn?(checking?t('checking_word'):`${t('start_with_label')} "${gs?.last_char}"...`):t('not_your_turn')}
                 disabled={!isMyTurn||checking} value={wordInput} onChange={e=>setWord(e.target.value)}/>
               <button type="submit" disabled={!isMyTurn||!wordInput.trim()||checking}
                 className="px-5 py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white font-bold rounded-lg text-xl">
                 {checking?'⏳':'➔'}
+              </button>
+              <button type="button" title={t('hint_title')}
+                disabled={hintLoading||checking||!gs?.last_char}
+                onClick={()=>{setHintLoading(true);setHint(null);send({type:'hint'});}}
+                className="px-4 py-3 bg-gray-800 hover:bg-gray-700 disabled:opacity-40 border border-gray-700 text-white rounded-lg text-sm">
+                {hintLoading?'⏳':`💡 ${t('hint_button')}`}
               </button>
             </form>
           )}
 
           {/* Log */}
           <div ref={logRef} className="h-44 overflow-y-auto bg-gray-900 border border-gray-800 rounded-xl p-3 space-y-1 font-mono text-xs">
-            {log.length===0&&<p className="text-gray-700 text-center py-4">Nhat ky game hien o day...</p>}
+            {log.length===0&&<p className="text-gray-700 text-center py-4">{t('log_empty')}</p>}
             {log.map((l,i)=>(<div key={i} className={l.ok?'text-green-400':'text-red-400'}>{l.text}</div>))}
           </div>
         </div>
