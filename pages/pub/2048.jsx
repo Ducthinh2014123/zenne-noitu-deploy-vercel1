@@ -224,7 +224,9 @@ export default function Game2048() {
           {showOverlay && (
             <div className="absolute inset-0 bg-gray-950/85 rounded-2xl flex flex-col items-center justify-center gap-4 backdrop-blur-sm">
               <div className="flex items-center gap-2 text-2xl font-bold text-white">
-                {won ? <><IconPartyPopper className="w-7 h-7 text-yellow-400" /> Ban thang roi!</> : <><IconFrown className="w-7 h-7 text-gray-400" /> Thua roi!</>}
+                {won
+                  ? <><IconPartyPopper className="w-7 h-7 text-yellow-400" /> Ban thang roi!</>
+                  : <><IconFrown className="w-7 h-7 text-gray-400" /> Thua roi!</>}
               </div>
               <div className="flex gap-2">
                 {won && !gameOver && (

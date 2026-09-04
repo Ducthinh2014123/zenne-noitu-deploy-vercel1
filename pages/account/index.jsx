@@ -13,7 +13,7 @@ const PROVIDER_BADGE = {
 
 const Card = ({ title, Icon, children }) => (
   <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 space-y-5">
-    <h2 className="flex items-center gap-2 text-base font-bold text-white">{Icon && <Icon className="w-4.5 h-4.5 text-indigo-400" />} {title}</h2>
+    <h2 className="flex items-center gap-2 text-base font-bold text-white">{Icon && <Icon className="w-4 h-4 text-indigo-400" />} {title}</h2>
     {children}
   </div>
 );
@@ -247,7 +247,7 @@ export default function AccountPage() {
                 <code className="text-xs bg-gray-900 border border-gray-700 px-3 py-1.5 rounded-lg text-indigo-300 break-all">{tfaData.secret}</code>
               </div>
               <div className="space-y-2">
-                <p className="text-sm text-gray-300">Nhập mã 6 chữ số để xác nhận:</p>
+                <p className="text-sm text-gray-300">Nhập mã 6 chự số để xác nhận:</p>
                 <div className="flex gap-2">
                   <input value={tfaCode} onChange={e=>setTfaCode(e.target.value.replace(/\D/g,'').slice(0,6))}
                     placeholder="000000" maxLength={6}
@@ -264,7 +264,7 @@ export default function AccountPage() {
           {tfaStep==='disable' && (
             <div className="space-y-3 mt-2 p-4 bg-red-900/10 border border-red-800/50 rounded-xl">
               <p className="text-sm text-red-300">Để tắt 2FA, nhập mã OTP <b>hoặc</b> mật khẩu:</p>
-              <Inp placeholder="Mã OTP 6 chữ số" maxLength={6}
+              <Inp placeholder="Mã OTP 6 chự số" maxLength={6}
                 value={tfaCode} onChange={e=>setTfaCode(e.target.value.replace(/\D/g,'').slice(0,6))}/>
               <div className="flex items-center gap-2 text-xs text-gray-500"><div className="flex-1 h-px bg-gray-700"/>hoặc<div className="flex-1 h-px bg-gray-700"/></div>
               <Inp type="password" placeholder="Mật khẩu tài khoản" value={tfaPw} onChange={e=>setTfaPw(e.target.value)}/>

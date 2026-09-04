@@ -4,7 +4,7 @@ import Layout from '../components/Layout';
 import { api } from '../lib/api';
 import { IconMedal } from '../components/icons';
 
-const MEDAL_COLORS = ['text-yellow-400', 'text-gray-300', 'text-orange-400'];
+const MEDAL_COLORS = ['text-yellow-400','text-gray-300','text-orange-400'];
 
 export default function AdminLeaderboard() {
   const router = useRouter();

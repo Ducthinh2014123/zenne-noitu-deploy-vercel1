@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useI18n, searchLanguages, langDisplayName } from '../lib/i18n';
-import { IconGlobe } from './icons';
+import { IconGlobe, IconCheck } from './icons';
 
 // Bo doi ngon ngu giao dien web - danh sach hon 300 ngon ngu, co the go tim
 // theo ma (en, vi...) hoac ten (English, Tieng Viet...).
@@ -26,7 +26,7 @@ export default function LanguageSwitcher() {
         type="button"
         onClick={() => setOpen(o => !o)}
         title={t('language_switcher_title')}
-        className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800 whitespace-nowrap"
+        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800 whitespace-nowrap"
       >
         <IconGlobe className="w-4 h-4" />
         <span className="hidden md:inline uppercase">{lang}</span>
@@ -48,11 +48,14 @@ export default function LanguageSwitcher() {
                 key={row.code}
                 type="button"
                 onClick={() => { setLang(row.code); setOpen(false); setQuery(''); }}
-                className={`w-full text-left px-3 py-2 text-sm flex items-center justify-between hover:bg-gray-800 ${
+                className={`w-full text-left px-3 py-2 text-sm flex items-center justify-between gap-2 hover:bg-gray-800 ${
                   row.code.toLowerCase() === lang.toLowerCase() ? 'bg-indigo-900/40 text-indigo-300' : 'text-gray-300'
                 }`}
               >
-                <span className="truncate">{row.name_native} <span className="text-gray-500">({row.name_en})</span></span>
+                <span className="truncate flex items-center gap-1.5">
+                  {row.code.toLowerCase() === lang.toLowerCase() && <IconCheck className="w-3.5 h-3.5 flex-shrink-0" />}
+                  {row.name_native} <span className="text-gray-500">({row.name_en})</span>
+                </span>
                 <span className="text-xs text-gray-600 uppercase flex-shrink-0 ml-2">{row.code}</span>
               </button>
             ))}

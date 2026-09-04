@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import Layout from '../components/Layout';
 import { api } from '../lib/api';
-import { IconLock, IconLogIn, IconCheckCircle, IconXCircle, IconAlertTriangle, IconClock } from '../components/icons';
+import { IconLock, IconLogIn, IconLoader, IconCheckCircle, IconXCircle } from '../components/icons';
 
 // Man hinh nhap Admin API Key ngay tren trang nay — khong redirect di dau ca,
 // de tranh vong lap voi trang dang nhap (NextAuth session va API Key la 2 he
@@ -29,7 +29,7 @@ function AdminConnect({ onConnected }) {
   return (
     <Layout title="Duyet Tu">
       <div className="max-w-md mx-auto bg-gray-900 border border-gray-800 rounded-2xl p-6">
-        <h2 className="flex items-center gap-2 text-lg font-bold text-white mb-1"><IconLock className="w-4.5 h-4.5 text-indigo-400" /> Ket noi Admin API</h2>
+        <h2 className="text-lg font-bold text-white mb-1 flex items-center gap-2"><IconLock className="w-4 h-4 text-indigo-400" /> Kết nối Admin API</h2>
         <p className="text-sm text-gray-500 mb-5">Nhap URL va API Key cua bot de vao Dashboard Admin.</p>
         {aErr && <div className="mb-3 p-3 bg-red-900/30 border border-red-700/50 rounded-xl text-red-400 text-sm">{aErr}</div>}
         <form onSubmit={doConnect} className="space-y-3">
@@ -38,8 +38,8 @@ function AdminConnect({ onConnected }) {
           <input type="password" placeholder="API Key" required value={aKey} onChange={e=>setAKey(e.target.value)}
             className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500 text-sm"/>
           <button type="submit" disabled={aLoading}
-            className="flex items-center justify-center gap-2 w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 text-white font-medium rounded-xl text-sm">
-            {aLoading ? 'Dang ket noi...' : (<><IconLogIn className="w-4 h-4" /> Vao Admin Dashboard</>)}
+            className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 text-white font-medium rounded-xl text-sm">
+            {aLoading ? 'Đang kết nối...' : <span className="inline-flex items-center gap-2"><IconLogIn className="w-4 h-4" /> Vào Admin Dashboard</span>}
           </button>
         </form>
       </div>
@@ -84,14 +84,14 @@ export default function Pending() {
   });
 
   const act = async (id, action) => {
-    try { await api.review(id, action); setMsg(action === 'approve' ? 'Da duyet!' : 'Da tu choi!'); load(); }
-    catch { setMsg('Loi!'); }
+    try { await api.review(id, action); setMsg(action === 'approve' ? 'Đã duyệt!' : 'Đã từ chối!'); load(); }
+    catch { setMsg('Lỗi!'); }
   };
 
   const bulkAct = async (action) => {
     if (!selected.size) return;
-    try { await api.reviewBulk([...selected], action); setMsg(`Da xu ly ${selected.size} tu!`); load(); }
-    catch { setMsg('Loi!'); }
+    try { await api.reviewBulk([...selected], action); setMsg(`Đã xử lý ${selected.size} từ!`); load(); }
+    catch { setMsg('Lỗi!'); }
   };
 
   const toggle = (id) => setSel(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
@@ -99,13 +99,11 @@ export default function Pending() {
 
   const counts = { pending: data.filter(r => r.status==='pending').length, approved: data.filter(r => r.status==='approved').length, rejected: data.filter(r => r.status==='rejected').length };
 
-  const TABS = [['pending', 'Cho duyet', IconClock], ['approved', 'Da duyet', IconCheckCircle], ['rejected', 'Da tu choi', IconXCircle]];
-
   return (
     <Layout title="Duyet Tu">
       {msg && <div className="mb-4 p-3 bg-indigo-900/30 border border-indigo-700 rounded-lg text-indigo-300 text-sm">{msg}</div>}
       <div className="flex gap-4 mb-5">
-        {TABS.map(([k,l,Icon]) => (
+        {[['pending',IconLoader,'Chờ duyệt'],['approved',IconCheckCircle,'Đã duyệt'],['rejected',IconXCircle,'Đã từ chối']].map(([k,Icon,l]) => (
           <button key={k} onClick={() => setTab(k)}
             className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
               tab===k ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-gray-900 border-gray-700 text-gray-400 hover:text-white'
@@ -117,8 +115,8 @@ export default function Pending() {
           placeholder="Tim tu..." value={q} onChange={e => setQ(e.target.value)} />
         {tab==='pending' && selected.size > 0 && (
           <>
-            <button onClick={() => bulkAct('approve')} className="flex items-center gap-1.5 px-4 py-2 bg-green-700 hover:bg-green-600 text-white rounded-lg text-sm font-medium"><IconCheckCircle className="w-4 h-4" /> Duyet {selected.size}</button>
-            <button onClick={() => bulkAct('reject')}  className="flex items-center gap-1.5 px-4 py-2 bg-red-800 hover:bg-red-700 text-white rounded-lg text-sm font-medium"><IconXCircle className="w-4 h-4" /> Tu choi {selected.size}</button>
+            <button onClick={() => bulkAct('approve')} className="flex items-center gap-1.5 px-4 py-2 bg-green-700 hover:bg-green-600 text-white rounded-lg text-sm font-medium"><IconCheckCircle className="w-4 h-4" /> Duyệt {selected.size}</button>
+            <button onClick={() => bulkAct('reject')}  className="flex items-center gap-1.5 px-4 py-2 bg-red-800 hover:bg-red-700 text-white rounded-lg text-sm font-medium"><IconXCircle className="w-4 h-4" /> Từ chối {selected.size}</button>
           </>
         )}
       </div>
@@ -152,8 +150,8 @@ export default function Pending() {
                   </td>
                   {tab==='pending' && (
                     <td className="px-4 py-3 text-right">
-                      <button onClick={()=>act(r.id,'approve')} className="inline-flex items-center gap-1 px-3 py-1 bg-green-700 hover:bg-green-600 text-white rounded text-xs mr-2"><IconCheckCircle className="w-3.5 h-3.5" /> Duyet</button>
-                      <button onClick={()=>act(r.id,'reject')}  className="inline-flex items-center gap-1 px-3 py-1 bg-red-800 hover:bg-red-700 text-white rounded text-xs"><IconXCircle className="w-3.5 h-3.5" /> Tu choi</button>
+                      <button onClick={()=>act(r.id,'approve')} className="inline-flex items-center gap-1 px-3 py-1 bg-green-700 hover:bg-green-600 text-white rounded text-xs mr-2"><IconCheckCircle className="w-3.5 h-3.5" /> Duyệt</button>
+                      <button onClick={()=>act(r.id,'reject')}  className="inline-flex items-center gap-1 px-3 py-1 bg-red-800 hover:bg-red-700 text-white rounded text-xs"><IconXCircle className="w-3.5 h-3.5" /> Từ chối</button>
                     </td>
                   )}
                 </tr>

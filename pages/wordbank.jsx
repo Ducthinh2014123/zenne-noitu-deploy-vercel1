@@ -50,10 +50,10 @@ export default function AdminWordbank() {
             ))}
           </div>
           {pages > 1 && (
-            <div className="flex justify-center items-center gap-2">
-              <button onClick={() => setPage(p => Math.max(0,p-1))} disabled={page===0} className="flex items-center justify-center px-4 py-2 rounded-lg bg-gray-800 text-gray-400 disabled:opacity-40 hover:bg-gray-700 text-sm"><IconChevronLeft className="w-4 h-4" /></button>
+            <div className="flex justify-center gap-2">
+              <button onClick={() => setPage(p => Math.max(0,p-1))} disabled={page===0} className="px-4 py-2 rounded-lg bg-gray-800 text-gray-400 disabled:opacity-40 hover:bg-gray-700 text-sm"><IconChevronLeft className="w-4 h-4" /></button>
               <span className="px-4 py-2 text-sm text-gray-400">Trang {page+1}/{pages}</span>
-              <button onClick={() => setPage(p => Math.min(pages-1,p+1))} disabled={page>=pages-1} className="flex items-center justify-center px-4 py-2 rounded-lg bg-gray-800 text-gray-400 disabled:opacity-40 hover:bg-gray-700 text-sm"><IconChevronRight className="w-4 h-4" /></button>
+              <button onClick={() => setPage(p => Math.min(pages-1,p+1))} disabled={page>=pages-1} className="px-4 py-2 rounded-lg bg-gray-800 text-gray-400 disabled:opacity-40 hover:bg-gray-700 text-sm"><IconChevronRight className="w-4 h-4" /></button>
             </div>
           )}
         </>

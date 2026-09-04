@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import PubLayout from '../../components/PubLayout';
 import { pubApi } from '../../lib/pubApi';
-import { IconTrophy, IconAlertTriangle, IconMessageCircle, IconFlame, IconMedal } from '../../components/icons';
+import { IconMedal, IconMessageCircle, IconFlame, IconAlertTriangle } from '../../components/icons';
 
-const MEDAL_COLORS = ['text-yellow-400', 'text-gray-300', 'text-orange-400'];
+const MEDAL_COLORS = ['text-yellow-400','text-gray-300','text-orange-400'];
 
 export default function PubLeaderboard() {
   const [data, setData]   = useState([]);
@@ -25,9 +25,9 @@ export default function PubLeaderboard() {
 
   return (
     <PubLayout title="Bảng Xếp Hạng">
-      {err && <div className="flex items-center gap-2 mb-4 p-3 bg-red-900/30 border border-red-700 rounded-lg text-red-400 text-sm"><IconAlertTriangle className="w-4 h-4" /> {err}</div>}
+      {err && <div className="mb-4 flex items-center gap-2 p-3 bg-red-900/30 border border-red-700 rounded-lg text-red-400 text-sm"><IconAlertTriangle className="w-4 h-4 flex-shrink-0" /> {err}</div>}
       <div className="flex gap-2 mb-6">
-        {[{id:'words',label:'Số Từ',Icon:IconMessageCircle},{id:'streak',label:'Streak',Icon:IconFlame}].map(b => (
+        {[{id:'words',Icon:IconMessageCircle,label:'Số Từ'},{id:'streak',Icon:IconFlame,label:'Streak'}].map(b => (
           <button key={b.id} onClick={() => switchMode(b.id)}
             className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               mode===b.id ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
