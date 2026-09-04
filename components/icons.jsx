@@ -161,3 +161,15 @@ export function IconClock(props) {
 export function IconDot(props) {
   return <Svg {...props}><circle cx="12" cy="12" r="4" fill="currentColor" stroke="none" /></Svg>;
 }
+export function IconGrid2x2(props) {
+  return <Svg {...props}><rect x="3" y="3" width="8" height="8" rx="1.5" /><rect x="13" y="3" width="8" height="8" rx="1.5" /><rect x="3" y="13" width="8" height="8" rx="1.5" /><rect x="13" y="13" width="8" height="8" rx="1.5" /></Svg>;
+}
+export function IconGrid3x3(props) {
+  return <Svg {...props}><rect x="3" y="3" width="18" height="18" rx="1.5" /><path d="M9 3v18M15 3v18M3 9h18M3 15h18" /></Svg>;
+}
+export function IconBomb(props) {
+  return <Svg {...props}><circle cx="11" cy="14" r="7" /><path d="M16 9l2-2M17 3l1.2 1.2M19.5 5.5 21 4M16.5 6.5 19 4" /><path d="M11 10.5v1.2M8.7 12.3l.9.9" /></Svg>;
+}
+export function IconSnake(props) {
+  return <Svg {...props}><path d="M4 6.5a2.5 2.5 0 0 1 5 0v6a2.5 2.5 0 0 0 5 0v-2" /><circle cx="16.5" cy="7.5" r="2.3" /><path d="M15.8 6.8h.1" strokeWidth="2.4" /></Svg>;
+}

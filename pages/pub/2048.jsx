@@ -1,5 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
+import { useSession } from 'next-auth/react';
 import PubLayout from '../../components/PubLayout';
+import { pubApi } from '../../lib/pubApi';
 import { IconPartyPopper, IconFrown, IconRefresh } from '../../components/icons';
 
 // Game 2048 - thuan client-side, khong can goi API bot. Diem cao nhat luu
@@ -119,6 +121,7 @@ export default function Game2048() {
   const [won, setWon]               = useState(false);
   const [keepPlaying, setKeepPlaying] = useState(false);
   const touchStart = useRef(null);
+  const { status: authStatus } = useSession();
 
   useEffect(() => {
     try {
@@ -133,6 +136,13 @@ export default function Game2048() {
       try { window.localStorage.setItem(BEST_KEY, String(score)); } catch (e) { /* ignore */ }
     }
   }, [score, best]);
+
+  // Ghi diem len bang xep hang chung khi ket thuc van (chi khi da dang nhap).
+  useEffect(() => {
+    if (gameOver && authStatus === 'authenticated' && score > 0) {
+      pubApi.submitGameScore('2048', score).catch(() => { /* im lang neu loi */ });
+    }
+  }, [gameOver, authStatus, score]);
 
   const handleMove = useCallback((direction) => {
     if (gameOver || (won && !keepPlaying)) return;

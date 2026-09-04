@@ -1,9 +1,21 @@
 import { useEffect, useState } from 'react';
 import PubLayout from '../../components/PubLayout';
 import { pubApi } from '../../lib/pubApi';
-import { IconMedal, IconMessageCircle, IconFlame, IconAlertTriangle } from '../../components/icons';
+import {
+  IconMedal, IconMessageCircle, IconFlame, IconAlertTriangle,
+  IconHash, IconSnake, IconGrid3x3, IconBomb,
+} from '../../components/icons';
 
 const MEDAL_COLORS = ['text-yellow-400','text-gray-300','text-orange-400'];
+
+const MODES = [
+  { id: 'words',            kind: 'legacy', Icon: IconMessageCircle, label: 'Số Từ' },
+  { id: 'streak',           kind: 'legacy', Icon: IconFlame,         label: 'Streak' },
+  { id: 'game_2048',        kind: 'game',   game: '2048',        Icon: IconHash,     label: '2048' },
+  { id: 'game_snake',       kind: 'game',   game: 'snake',       Icon: IconSnake,    label: 'Snake' },
+  { id: 'game_tictactoe',   kind: 'game',   game: 'tictactoe',   Icon: IconGrid3x3,  label: 'Tic Tac Toe' },
+  { id: 'game_minesweeper', kind: 'game',   game: 'minesweeper', Icon: IconBomb,     label: 'Minesweeper' },
+];
 
 export default function PubLeaderboard() {
   const [data, setData]   = useState([]);
@@ -13,7 +25,11 @@ export default function PubLeaderboard() {
 
   const load = (m) => {
     setL(true);
-    pubApi.leaderboard({ mode: m, limit: 50 })
+    const cfg = MODES.find(x => x.id === m);
+    const req = cfg.kind === 'game'
+      ? pubApi.gameLeaderboard({ game: cfg.game, limit: 50 })
+      : pubApi.leaderboard({ mode: m, limit: 50 });
+    req
       .then(r => { setData(r.data || []); setErr(''); })
       .catch(e => setErr(e.message))
       .finally(() => setL(false));
@@ -22,12 +38,13 @@ export default function PubLeaderboard() {
   useEffect(() => { load('words'); }, []);
 
   const switchMode = (m) => { setMode(m); load(m); };
+  const curCfg = MODES.find(x => x.id === mode);
 
   return (
     <PubLayout title="Bảng Xếp Hạng">
       {err && <div className="mb-4 flex items-center gap-2 p-3 bg-red-900/30 border border-red-700 rounded-lg text-red-400 text-sm"><IconAlertTriangle className="w-4 h-4 flex-shrink-0" /> {err}</div>}
-      <div className="flex gap-2 mb-6">
-        {[{id:'words',Icon:IconMessageCircle,label:'Số Từ'},{id:'streak',Icon:IconFlame,label:'Streak'}].map(b => (
+      <div className="flex flex-wrap gap-2 mb-6">
+        {MODES.map(b => (
           <button key={b.id} onClick={() => switchMode(b.id)}
             className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               mode===b.id ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
@@ -55,8 +72,16 @@ export default function PubLeaderboard() {
                   <div className="text-xs text-gray-500 font-mono">{p.user_id}</div>
                 </div>
                 <div className="text-right">
-                  <div className="font-bold text-indigo-400 text-lg">{(p.total_words||0).toLocaleString()}</div>
-                  <div className="text-xs text-gray-500">từ • streak {p.max_streak||0}</div>
+                  {curCfg.kind === 'game'
+                    ? <>
+                        <div className="font-bold text-indigo-400 text-lg">{(p.best_score||0).toLocaleString()}</div>
+                        <div className="text-xs text-gray-500">điểm • {p.plays||0} lượt chơi</div>
+                      </>
+                    : <>
+                        <div className="font-bold text-indigo-400 text-lg">{(p.total_words||0).toLocaleString()}</div>
+                        <div className="text-xs text-gray-500">từ • streak {p.max_streak||0}</div>
+                      </>
+                  }
                 </div>
               </div>
             ))}

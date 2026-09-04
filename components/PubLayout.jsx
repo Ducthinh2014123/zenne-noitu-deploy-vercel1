@@ -6,7 +6,7 @@ import { useI18n } from '../lib/i18n';
 import LanguageSwitcher from './LanguageSwitcher';
 import {
   IconHome, IconTrophy, IconBookOpen, IconBan, IconGlobe, IconTarget,
-  IconGamepad, IconHash, IconSettings, IconLogOut, IconLogIn, IconChevronRight,
+  IconGamepad, IconGrid2x2, IconSettings, IconLogOut, IconLogIn, IconChevronRight,
   IconLink,
 } from './icons';
 
@@ -18,7 +18,7 @@ const NAV = [
   { href: '/pub/servers',     Icon: IconGlobe,    key: 'nav_servers' },
   { href: '/pub/milestones',  Icon: IconTarget,   key: 'nav_milestones' },
   { href: '/pub/play',        Icon: IconGamepad,  key: 'nav_play' },
-  { href: '/pub/2048',        Icon: IconHash,     label: '2048' },
+  { href: '/pub/games',       Icon: IconGrid2x2,  key: 'nav_games' },
 ];
 
 export default function PubLayout({ children, title }) {
