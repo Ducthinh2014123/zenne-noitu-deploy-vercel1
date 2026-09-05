@@ -37,7 +37,17 @@ export default function SnakeGame() {
   const dirRef = useRef(dir);
   const dirLockRef = useRef(false);
   const touchStart = useRef(null);
+  const sessionTokenRef = useRef(null);
   const { status: authStatus } = useSession();
+
+  const requestSessionToken = useCallback(() => {
+    if (authStatus !== 'authenticated') return;
+    pubApi.gameSessionStart('snake')
+      .then(d => { sessionTokenRef.current = d.token; })
+      .catch(() => { sessionTokenRef.current = null; });
+  }, [authStatus]);
+
+  useEffect(() => { requestSessionToken(); }, [requestSessionToken]);
 
   useEffect(() => {
     try {
@@ -55,7 +65,8 @@ export default function SnakeGame() {
 
   useEffect(() => {
     if (gameOver && authStatus === 'authenticated' && score > 0) {
-      pubApi.submitGameScore('snake', score).catch(() => { /* im lang neu loi */ });
+      const token = sessionTokenRef.current;
+      if (token) pubApi.submitGameScore('snake', score, token).catch(() => { /* im lang neu loi */ });
     }
   }, [gameOver, authStatus, score]);
 
@@ -135,6 +146,7 @@ export default function SnakeGame() {
     setScore(0);
     setGameOver(false);
     setRunning(true);
+    requestSessionToken();
   }
 
   const snakeSet = new Map(snake.map((seg, i) => [seg.x + ',' + seg.y, i]));

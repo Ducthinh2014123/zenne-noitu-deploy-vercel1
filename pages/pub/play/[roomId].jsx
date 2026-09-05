@@ -31,6 +31,7 @@ export default function GameRoom() {
   const [checking, setChecking] = useState(false);
   const [hint, setHint]         = useState(null); // { syllable, can_continue, words }
   const [hintLoading, setHintLoading] = useState(false);
+  const [hintsLeft, setHintsLeft] = useState(3);
 
   const addLog = useCallback((text, ok=true) => {
     setLog(prev => [...prev.slice(-99), { text, ok }]);
@@ -68,6 +69,7 @@ export default function GameRoom() {
       if (t==='joined') {
         setMyName(name); setIsHost(d.is_host); setTL(d.time_limit||30);
         setPhase(d.state==='playing'?'playing':'waiting'); setGs(d);
+        if (typeof d.hints_left === 'number') setHintsLeft(d.hints_left);
         addLog('Vao phong thanh cong la ' + name + (d.is_host?' (Host)':''));
       } else if (t==='state') {
         setGs(d);
@@ -109,10 +111,16 @@ export default function GameRoom() {
         addLog('Ket thuc! Nguoi thang: ' + (d.winner||'Hoa'));
       } else if (t==='restarted') {
         setPhase('waiting'); clearInterval(timerRef.current); setTimer(0);
+        setHintsLeft(3); setHint(null);
         addLog('Game khoi dong lai.');
       } else if (t==='hint_result') {
         setHintLoading(false);
         setHint({ syllable: d.syllable, can_continue: d.can_continue, words: d.words||[] });
+        if (typeof d.hints_left === 'number') setHintsLeft(d.hints_left);
+      } else if (t==='hint_limit_reached') {
+        setHintLoading(false);
+        setHintsLeft(0);
+        flash_('Ban da dung het 3 luot goi y roi!', false);
       } else if (t==='error') {
         setChecking(false);
         flash_(d.msg, false);
@@ -296,16 +304,17 @@ export default function GameRoom() {
                   isMyTurn&&!checking?'border-indigo-500':'border-gray-700 opacity-60'
                 }`}
                 placeholder={isMyTurn?(checking?t('checking_word'):`${t('start_with_label')} "${gs?.last_char}"...`):t('not_your_turn')}
-                disabled={!isMyTurn||checking} value={wordInput} onChange={e=>setWord(e.target.value)}/>
+                disabled={!isMyTurn||checking} value={wordInput} onChange={e=>setWord(e.target.value)}
+                onPaste={e=>e.preventDefault()}/>
               <button type="submit" disabled={!isMyTurn||!wordInput.trim()||checking}
                 className="flex items-center justify-center px-5 py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white font-bold rounded-lg">
                 {checking?<IconClock className="w-5 h-5 animate-pulse" />:<IconArrowRight className="w-5 h-5" />}
               </button>
-              <button type="button" title={t('hint_title')}
-                disabled={hintLoading||checking||!gs?.last_char}
+              <button type="button" title={hintsLeft<=0?'Ban da dung het 3 luot goi y':t('hint_title')}
+                disabled={hintLoading||checking||!gs?.last_char||hintsLeft<=0}
                 onClick={()=>{setHintLoading(true);setHint(null);send({type:'hint'});}}
                 className="flex items-center gap-1.5 px-4 py-3 bg-gray-800 hover:bg-gray-700 disabled:opacity-40 border border-gray-700 text-white rounded-lg text-sm">
-                {hintLoading?<IconClock className="w-4 h-4 animate-pulse" />:<IconLightbulb className="w-4 h-4" />} {t('hint_button')}
+                {hintLoading?<IconClock className="w-4 h-4 animate-pulse" />:<IconLightbulb className="w-4 h-4" />} {t('hint_button')} ({hintsLeft})
               </button>
             </form>
           )}

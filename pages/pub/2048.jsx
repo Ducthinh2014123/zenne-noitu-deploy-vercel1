@@ -121,7 +121,17 @@ export default function Game2048() {
   const [won, setWon]               = useState(false);
   const [keepPlaying, setKeepPlaying] = useState(false);
   const touchStart = useRef(null);
+  const sessionTokenRef = useRef(null);
   const { status: authStatus } = useSession();
+
+  const requestSessionToken = useCallback(() => {
+    if (authStatus !== 'authenticated') return;
+    pubApi.gameSessionStart('2048')
+      .then(d => { sessionTokenRef.current = d.token; })
+      .catch(() => { sessionTokenRef.current = null; });
+  }, [authStatus]);
+
+  useEffect(() => { requestSessionToken(); }, [requestSessionToken]);
 
   useEffect(() => {
     try {
@@ -140,7 +150,8 @@ export default function Game2048() {
   // Ghi diem len bang xep hang chung khi ket thuc van (chi khi da dang nhap).
   useEffect(() => {
     if (gameOver && authStatus === 'authenticated' && score > 0) {
-      pubApi.submitGameScore('2048', score).catch(() => { /* im lang neu loi */ });
+      const token = sessionTokenRef.current;
+      if (token) pubApi.submitGameScore('2048', score, token).catch(() => { /* im lang neu loi */ });
     }
   }, [gameOver, authStatus, score]);
 
@@ -192,6 +203,7 @@ export default function Game2048() {
     setGameOver(false);
     setWon(false);
     setKeepPlaying(false);
+    requestSessionToken();
   }
 
   const showOverlay = gameOver || (won && !keepPlaying);
