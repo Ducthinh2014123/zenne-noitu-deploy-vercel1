@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { signIn, useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
+import Link from 'next/link';
 import { IconLink, IconLogIn, IconSparkles, IconCheckCircle, IconInfo, IconAlertTriangle, IconShieldCheck, IconRocket, IconLock, IconLogOut, IconChevronRight, IconEye, IconEyeOff, IconMail, IconKey, IconUser, IconCheck } from '../../components/icons';
 
 // ── Icons
@@ -246,6 +247,9 @@ export default function AuthLogin() {
                         <button type="button" onClick={()=>setShowLPw(s=>!s)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300">{showLPw?<IconEyeOff className="w-4 h-4" />:<IconEye className="w-4 h-4" />}</button>
                       </div>
                       {lErr.pw && <p className="mt-1 text-xs text-red-400">{lErr.pw}</p>}
+                      <div className="text-right mt-1.5">
+                        <Link href="/auth/reset-password" className="text-xs text-indigo-400 hover:text-indigo-300 font-medium">Quên mật khẩu?</Link>
+                      </div>
                     </div>
                     <button type="submit" disabled={any}
                       className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 text-white font-semibold rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-indigo-900/30">
