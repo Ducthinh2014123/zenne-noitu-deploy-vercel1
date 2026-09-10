@@ -305,6 +305,84 @@ export default function AuthLogin() {
     </>
   );
 
+  // ═══ EMAIL VERIFY (OTP) STEP ═══
+  if (stepVerify) {
+    const remainMs = otpExpiresAt - nowTick;
+    const remainSec = Math.max(0, Math.floor(remainMs / 1000));
+    const expired = remainMs <= 0;
+    const mm = String(Math.floor(remainSec / 60)).padStart(2, '0');
+    const ss = String(remainSec % 60).padStart(2, '0');
+    const resendWaitSec = Math.max(0, Math.ceil((resendAt - nowTick) / 1000));
+    return (
+      <>
+        <Head><title>Xác minh tài khoản — Nối Từ Bot</title></Head>
+        <div className="min-h-screen bg-gray-950 flex items-center justify-center p-4"
+          style={{backgroundImage:'radial-gradient(ellipse at top,rgba(99,102,241,.1) 0%,transparent 55%)'}}>
+          <div className="w-full max-w-sm">
+            <div className="text-center mb-7">
+              <IconMail className="w-10 h-10 text-indigo-400 mx-auto mb-3" />
+              <h1 className="text-2xl font-bold text-white">Xác minh tài khoản</h1>
+              <p className="text-gray-400 text-sm mt-1">Mã xác minh đã được gửi tới {maskEmail(verifyCtx.email)}</p>
+            </div>
+            <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+              {otpMsg.text && (
+                <div className={`mb-4 flex items-center gap-2 p-3 rounded-xl text-sm border ${otpMsg.type==='success' ? 'bg-green-900/30 border-green-700/50 text-green-400' : 'bg-indigo-900/30 border-indigo-700/50 text-indigo-300'}`}>
+                  {otpMsg.type==='success'?<IconCheckCircle className="w-4 h-4 flex-shrink-0" />:<IconInfo className="w-4 h-4 flex-shrink-0" />} {otpMsg.text}
+                </div>
+              )}
+              {otpErr && (
+                <div className="mb-4 flex items-center gap-2 p-3 bg-red-900/30 border border-red-700/50 rounded-xl text-red-400 text-sm">
+                  <IconAlertTriangle className="w-4 h-4 flex-shrink-0" /> {otpErr}
+                </div>
+              )}
+
+              <div className="flex justify-center gap-2 mb-3" onPaste={handleOtpPaste}>
+                {otp.map((d, i) => (
+                  <input key={i} ref={el => { otpRefs.current[i] = el; }}
+                    type="text" inputMode="numeric" pattern="[0-9]*" maxLength={1} autoFocus={i===0}
+                    value={d} disabled={otpLoading==='verify'}
+                    onChange={e => handleOtpChange(i, e.target.value)}
+                    onKeyDown={e => handleOtpKeyDown(i, e)}
+                    className="w-11 h-13 sm:w-12 sm:h-14 bg-gray-800 border border-gray-700 rounded-xl text-center text-white text-xl font-mono focus:outline-none focus:border-indigo-500 disabled:opacity-50"
+                  />
+                ))}
+              </div>
+
+              <p className="text-center text-xs text-gray-500 mb-5">
+                {expired
+                  ? <span className="text-red-400">Mã đã hết hạn, vui lòng gửi lại mã mới.</span>
+                  : <>Mã hết hạn sau <span className="text-gray-300 font-mono">{mm}:{ss}</span></>}
+              </p>
+
+              <button onClick={doVerifyOtp} disabled={otpLoading!=='' || otp.join('').length!==6 || expired}
+                className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 text-white font-semibold rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-indigo-900/30 mb-3">
+                {otpLoading==='verify'?<><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/>Đang xác minh...</>:<><IconCheckCircle className="w-4 h-4" /> Xác minh</>}
+              </button>
+
+              <button onClick={doResendOtp} disabled={otpLoading!=='' || nowTick < resendAt}
+                className="w-full py-2.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 disabled:opacity-50 text-gray-300 font-medium rounded-xl flex items-center justify-center gap-2 text-sm mb-2">
+                {otpLoading==='resend'
+                  ?<><div className="w-4 h-4 border-2 border-gray-500 border-t-white rounded-full animate-spin"/>Đang gửi...</>
+                  :nowTick < resendAt
+                    ?<><IconClock className="w-4 h-4"/> Gửi lại mã ({resendWaitSec}s)</>
+                    :<><IconRefresh className="w-4 h-4" /> Gửi lại mã</>}
+              </button>
+
+              <button type="button" onClick={() => {
+                  setStepVerify(false); setVerifyCtx({ email:'', pw:'' }); setOtp(['','','','','','']);
+                  setOtpErr(''); setOtpMsg({type:'',text:''}); setOtpLoading('');
+                  setTab('login'); setMsg({type:'',text:''});
+                }}
+                className="w-full py-2.5 text-gray-500 hover:text-gray-300 text-sm flex items-center justify-center gap-1">
+                <IconChevronLeft className="w-4 h-4" /> Quay lại đăng nhập
+              </button>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
+
   // ═══ MAIN LOGIN PAGE ═══
   return (
     <>
