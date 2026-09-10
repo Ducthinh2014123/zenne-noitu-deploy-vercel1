@@ -59,8 +59,12 @@ export const authOptions = {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email: credentials.email, password: credentials.password }),
           });
-          if (!r.ok) return null;
-          const user = await r.json();
+          let user = {};
+          try { user = await r.json(); } catch {}
+          if (!r.ok) {
+            if (user?.error === 'EmailNotVerified') throw new Error('EmailNotVerified');
+            return null;
+          }
           if (!user?.id) return null;
 
           // Kiem tra 2FA
@@ -78,7 +82,7 @@ export const authOptions = {
           user.username = user.username || user.name;
           return user;
         } catch (e) {
-          if (e.message === 'Needs2FA' || e.message === 'Invalid2FA') throw e;
+          if (e.message === 'Needs2FA' || e.message === 'Invalid2FA' || e.message === 'EmailNotVerified') throw e;
           console.error('[auth/credentials]', e);
           return null;
         }

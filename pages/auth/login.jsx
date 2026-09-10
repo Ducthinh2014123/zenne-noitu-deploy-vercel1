@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { signIn, useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Link from 'next/link';
-import { IconLink, IconLogIn, IconSparkles, IconCheckCircle, IconInfo, IconAlertTriangle, IconShieldCheck, IconRocket, IconLock, IconLogOut, IconChevronRight, IconEye, IconEyeOff, IconMail, IconKey, IconUser, IconCheck } from '../../components/icons';
+import { IconLink, IconLogIn, IconSparkles, IconCheckCircle, IconInfo, IconAlertTriangle, IconShieldCheck, IconRocket, IconLock, IconLogOut, IconChevronRight, IconChevronLeft, IconEye, IconEyeOff, IconMail, IconKey, IconUser, IconCheck, IconRefresh, IconClock } from '../../components/icons';
 
 // ── Icons
 const GoogleIcon = () => (<svg viewBox="0 0 24 24" className="w-5 h-5" fill="none"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>);
@@ -50,6 +50,18 @@ export default function AuthLogin() {
   const [showRPw,setShowRPw]= useState(false);
   const [rErr,   setRErr]   = useState({});
 
+  // ── Xac minh email khi dang ky (OTP 6 so) ──
+  const [stepVerify,   setStepVerify]   = useState(false);
+  const [verifyCtx,    setVerifyCtx]    = useState({ email:'', pw:'' });
+  const [otp,          setOtp]          = useState(['','','','','','']);
+  const [otpErr,       setOtpErr]       = useState('');
+  const [otpMsg,       setOtpMsg]       = useState({ type:'', text:'' });
+  const [otpLoading,   setOtpLoading]   = useState('');
+  const [otpExpiresAt, setOtpExpiresAt] = useState(0);
+  const [resendAt,     setResendAt]     = useState(0);
+  const [nowTick,      setNowTick]      = useState(Date.now());
+  const otpRefs = useRef([]);
+
   // Admin key
   const [aUrl,     setAUrl]     = useState('');
   const [aKey,     setAKey]     = useState('');
@@ -61,6 +73,12 @@ export default function AuthLogin() {
   useEffect(() => {
     if (status === 'authenticated') router.push(callbackUrl||'/pub');
   }, [status, router, callbackUrl]);
+
+  useEffect(() => {
+    if (!stepVerify) return;
+    const t = setInterval(() => setNowTick(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [stepVerify]);
 
   useEffect(() => {
     if (!router.isReady) return;
@@ -77,6 +95,26 @@ export default function AuthLogin() {
 
   const oAuth = async (p) => { setLoading(p); setMsg({type:'',text:''}); await signIn(p, { callbackUrl: callbackUrl||'/pub' }); };
 
+  const maskEmail = (addr) => {
+    const s = String(addr||'');
+    const at = s.indexOf('@');
+    if (at <= 0) return s;
+    const user = s.slice(0, at), domain = s.slice(at);
+    const visible = user.length <= 2 ? user.slice(0,1) : user.slice(0,2);
+    return `${visible}${'*'.repeat(Math.max(1, user.length - visible.length))}${domain}`;
+  };
+
+  const openVerifyStep = (email, pw, expiresInSec) => {
+    setVerifyCtx({ email, pw: pw||'' });
+    setOtp(['','','','','','']);
+    setOtpErr('');
+    setOtpMsg({ type:'', text:'' });
+    setOtpExpiresAt(Date.now() + (Number(expiresInSec)||600) * 1000);
+    setResendAt(Date.now() + 60*1000);
+    setStepVerify(true);
+    setTimeout(() => otpRefs.current?.[0]?.focus(), 50);
+  };
+
   const doLogin = async (e) => {
     e.preventDefault();
     const errs = {};
@@ -88,6 +126,14 @@ export default function AuthLogin() {
     setLoading('');
     if (res?.error === 'Needs2FA') { setPending({ email:lEmail, pw:lPw }); setStep2FA(true); }
     else if (res?.error === 'Invalid2FA') { setMsg({ type:'error', text:'Mã OTP sai.' }); }
+    else if (res?.error === 'EmailNotVerified') {
+      setMsg({ type:'info', text:'Tài khoản chưa xác minh email. Đang gửi lại mã xác minh...' });
+      try {
+        const r = await fetch('/api/auth/register/email/resend', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ email:lEmail }) });
+        const d = await r.json();
+        openVerifyStep(lEmail, lPw, d.expires_in);
+      } catch { openVerifyStep(lEmail, lPw, 600); }
+    }
     else if (res?.error) { setMsg({ type:'error', text:'Email hoặc mật khẩu không đúng.' }); }
   };
 
@@ -114,10 +160,95 @@ export default function AuthLogin() {
       const r = await fetch('/api/auth/register', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username:rName,email:rEmail,password:rPw}) });
       const d = await r.json();
       if (!r.ok) { setMsg({type:'error',text:d.error||'Đăng ký thất bại'}); setLoading(''); return; }
-      setMsg({type:'success',text:'Đăng ký thành công! Đang đăng nhập...'});
-      await signIn('credentials',{email:rEmail,password:rPw,redirect:false});
+      setMsg({type:'',text:''});
+      openVerifyStep(rEmail, rPw, d.expires_in);
     } catch { setMsg({type:'error',text:'Lỗi kết nối server.'}); }
     setLoading('');
+  };
+
+  // ── OTP box handlers ──
+  const focusOtp = (i) => otpRefs.current?.[i]?.focus();
+
+  const handleOtpChange = (i, raw) => {
+    const digit = raw.replace(/\D/g, '').slice(-1);
+    setOtp(prev => { const next = [...prev]; next[i] = digit; return next; });
+    setOtpErr('');
+    if (digit && i < 5) focusOtp(i + 1);
+  };
+
+  const handleOtpKeyDown = (i, e) => {
+    if (e.key === 'Backspace') {
+      if (!otp[i] && i > 0) {
+        e.preventDefault();
+        setOtp(prev => { const next = [...prev]; next[i-1] = ''; return next; });
+        focusOtp(i - 1);
+      }
+    } else if (e.key === 'ArrowLeft' && i > 0) { focusOtp(i - 1); }
+    else if (e.key === 'ArrowRight' && i < 5) { focusOtp(i + 1); }
+    else if (e.key === 'Enter') { e.preventDefault(); doVerifyOtp(); }
+  };
+
+  const handleOtpPaste = (e) => {
+    const text = (e.clipboardData || window.clipboardData).getData('text');
+    const digits = String(text).replace(/\D/g, '').slice(0, 6);
+    if (!digits) return;
+    e.preventDefault();
+    const next = ['','','','','',''];
+    for (let k = 0; k < digits.length; k++) next[k] = digits[k];
+    setOtp(next);
+    setOtpErr('');
+    focusOtp(Math.min(digits.length, 5));
+  };
+
+  const doVerifyOtp = async () => {
+    const code = otp.join('');
+    if (code.length !== 6 || otpLoading) { if (code.length !== 6) setOtpErr('Nhập đủ 6 chữ số.'); return; }
+    setOtpLoading('verify'); setOtpErr(''); setOtpMsg({type:'',text:''});
+    try {
+      const r = await fetch('/api/auth/register/email/verify', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ email: verifyCtx.email, code }) });
+      const d = await r.json();
+      if (!r.ok) {
+        setOtpErr(d.error || 'Mã xác minh không đúng.');
+        setOtp(['','','','','','']);
+        focusOtp(0);
+        setOtpLoading('');
+        return;
+      }
+      setOtpMsg({ type:'success', text:'Xác minh thành công! Đang đăng nhập...' });
+      if (verifyCtx.pw) {
+        await signIn('credentials', { email: verifyCtx.email, password: verifyCtx.pw, redirect:false });
+      } else {
+        setStepVerify(false);
+        setTab('login');
+        setLEmail(verifyCtx.email);
+        setMsg({ type:'success', text:'Xác minh thành công! Vui lòng đăng nhập.' });
+      }
+    } catch {
+      setOtpErr('Lỗi kết nối server.');
+    }
+    setOtpLoading('');
+  };
+
+  const doResendOtp = async () => {
+    if (otpLoading || nowTick < resendAt) return;
+    setOtpLoading('resend'); setOtpErr(''); setOtpMsg({type:'',text:''});
+    try {
+      const r = await fetch('/api/auth/register/email/resend', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ email: verifyCtx.email }) });
+      const d = await r.json();
+      if (!r.ok) {
+        setOtpErr(d.error || 'Không thể gửi lại mã lúc này.');
+        setResendAt(Date.now() + 60*1000);
+      } else {
+        setOtp(['','','','','','']);
+        setOtpExpiresAt(Date.now() + (Number(d.expires_in)||600) * 1000);
+        setResendAt(Date.now() + 60*1000);
+        setOtpMsg({ type:'success', text:'Đã gửi lại mã xác minh tới email của bạn.' });
+        focusOtp(0);
+      }
+    } catch {
+      setOtpErr('Lỗi kết nối server.');
+    }
+    setOtpLoading('');
   };
 
   const doAdminLogin = async (e) => {
