@@ -33,72 +33,122 @@ export default function PubLayout({ children, title }) {
         <title>{pageTitle} — {t('brand')}</title>
         <meta name="viewport" content="width=device-width,initial-scale=1" />
       </Head>
-      <div className="min-h-screen bg-gray-950 flex flex-col">
-        <header className="bg-gray-900/95 backdrop-blur border-b border-gray-800 sticky top-0 z-40">
-          <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
-            <Link href="/pub" className="flex items-center gap-2 font-bold text-base text-white hover:text-indigo-400 transition-colors flex-shrink-0">
-              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-indigo-600/20 border border-indigo-500/30 text-indigo-400">
-                <IconLink className="w-4 h-4" />
+      <div className="min-h-screen bg-gray-950 flex flex-row">
+        {/* Collapsible Sidebar */}
+        <aside className="sidebar fixed top-0 left-0 bottom-0 z-50 flex flex-col justify-between py-3 shadow-2xl text-white select-none">
+          {/* Top Brand Logo */}
+          <div className="px-2.5 py-1 flex items-center h-14 flex-shrink-0">
+            <Link href="/pub" className="flex items-center gap-3 w-full group">
+              <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-white/20 border border-white/30 text-white flex-shrink-0 group-hover:scale-105 transition-transform shadow-sm">
+                <IconLink className="w-5 h-5" />
               </span>
-              <span className="hidden sm:inline">{t('brand')}</span>
+              <span className="font-bold text-base text-white tracking-wide whitespace-nowrap overflow-hidden transition-opacity">
+                {t('brand')}
+              </span>
             </Link>
-            <nav className="flex items-center gap-0.5 overflow-x-auto">
-              {NAV.map(({ href, Icon, key, label }) => (
-                <Link key={href} href={href} title={label ?? t(key)}
-                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-                    isActive(href) ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'
-                  }`}>
-                  <Icon className="w-4 h-4 flex-shrink-0" />
-                  <span className="hidden md:inline">{label ?? t(key)}</span>
+          </div>
+
+          {/* Navigation Links */}
+          <nav className="flex-1 overflow-y-auto overflow-x-hidden sidebar-scroll py-2 px-2 space-y-1">
+            {NAV.map(({ href, Icon, key, label }) => {
+              const active = isActive(href);
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  title={label ?? t(key)}
+                  className={`flex items-center h-11 px-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-colors group ${
+                    active
+                      ? 'bg-white/25 text-white font-semibold shadow-inner'
+                      : 'text-white/80 hover:text-white hover:bg-white/15'
+                  }`}
+                >
+                  <div className="w-8 h-8 flex items-center justify-center flex-shrink-0">
+                    <Icon className="w-5 h-5 flex-shrink-0" />
+                  </div>
+                  <span className="ml-3 whitespace-nowrap overflow-hidden">
+                    {label ?? t(key)}
+                  </span>
                 </Link>
-              ))}
-              <div className="flex items-center gap-0.5 ml-1 pl-1.5 border-l border-gray-800 flex-shrink-0">
-                <LanguageSwitcher />
-                {authStatus === 'authenticated' && (
-                  <>
-                    <Link href="/account" title={t('account')}
-                      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-                        router.pathname === '/account' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'
-                      }`}>
-                      <IconSettings className="w-4 h-4" />
-                      <span className="hidden md:inline">{session?.user?.username || session?.user?.name || t('account')}</span>
-                    </Link>
-                    <button onClick={() => signOut({ callbackUrl: '/auth/login' })} title={t('logout')}
-                      className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-gray-800 rounded-lg">
-                      <IconLogOut className="w-4 h-4" />
-                    </button>
-                  </>
-                )}
-                {authStatus === 'unauthenticated' && (
-                  <Link href="/auth/login"
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap bg-indigo-600 text-white hover:bg-indigo-500 transition-colors">
-                    <IconLogIn className="w-4 h-4" />
-                    <span className="hidden md:inline">{t('login')}</span>
-                  </Link>
-                )}
-                <Link href="/pending" title={t('admin')}
-                  className="flex items-center gap-0.5 px-2 py-1.5 text-xs text-gray-600 hover:text-gray-400 hover:bg-gray-800 rounded-lg whitespace-nowrap">
-                  <span className="hidden lg:inline">{t('admin')}</span>
-                  <IconChevronRight className="w-3.5 h-3.5" />
+              );
+            })}
+          </nav>
+
+          {/* Bottom Settings / Language / Auth */}
+          <div className="px-2 pt-2 pb-1 border-t border-white/20 flex flex-col gap-1 flex-shrink-0">
+            <LanguageSwitcher inSidebar />
+
+            {authStatus === 'authenticated' && (
+              <div className="flex items-center gap-1">
+                <Link
+                  href="/account"
+                  title={t('account')}
+                  className={`flex-1 flex items-center h-10 px-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-colors ${
+                    router.pathname === '/account'
+                      ? 'bg-white/25 text-white'
+                      : 'text-white/85 hover:text-white hover:bg-white/15'
+                  }`}
+                >
+                  <div className="w-8 h-8 flex items-center justify-center flex-shrink-0">
+                    <IconSettings className="w-5 h-5" />
+                  </div>
+                  <span className="ml-3 truncate max-w-[130px]">
+                    {session?.user?.username || session?.user?.name || t('account')}
+                  </span>
                 </Link>
+                <button
+                  onClick={() => signOut({ callbackUrl: '/auth/login' })}
+                  title={t('logout')}
+                  className="w-10 h-10 flex items-center justify-center flex-shrink-0 text-white/70 hover:text-white hover:bg-white/15 rounded-xl transition-colors"
+                >
+                  <IconLogOut className="w-4 h-4" />
+                </button>
               </div>
-            </nav>
+            )}
+
+            {authStatus === 'unauthenticated' && (
+              <Link
+                href="/auth/login"
+                title={t('login')}
+                className="flex items-center h-10 px-2.5 rounded-xl text-sm font-medium whitespace-nowrap bg-white/20 hover:bg-white/30 text-white transition-colors"
+              >
+                <div className="w-8 h-8 flex items-center justify-center flex-shrink-0">
+                  <IconLogIn className="w-5 h-5" />
+                </div>
+                <span className="ml-3">{t('login')}</span>
+              </Link>
+            )}
+
+            <Link
+              href="/pending"
+              title={t('admin')}
+              className="flex items-center h-9 px-2.5 rounded-xl text-xs text-white/60 hover:text-white hover:bg-white/15 transition-colors whitespace-nowrap"
+            >
+              <div className="w-8 h-8 flex items-center justify-center flex-shrink-0">
+                <IconChevronRight className="w-4 h-4" />
+              </div>
+              <span className="ml-3">{t('admin')}</span>
+            </Link>
           </div>
-        </header>
-        <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-8">
-          {pageTitle && <h1 className="text-2xl font-bold text-white mb-6">{pageTitle}</h1>}
-          {children}
-        </main>
-        <footer className="border-t border-gray-800 py-4">
-          <div className="max-w-6xl mx-auto px-4 flex items-center justify-center gap-2 text-xs text-gray-600">
-            <IconLink className="w-3.5 h-3.5" />
-            <span>{t('brand')}</span>
-            <span>·</span>
-            <Link href="/pub/play" className="hover:text-gray-400">{t('nav_play')}</Link>
-            <span>·</span>
-            <Link href="/pending" className="hover:text-gray-400">{t('admin')}</Link>
-          </div>
-        </footer>
+        </aside>
+
+        {/* Main Content Area */}
+        <div className="flex-1 flex flex-col min-w-0" style={{ paddingLeft: 'var(--sidebar-closed)' }}>
+          <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-8">
+            {pageTitle && <h1 className="text-2xl font-bold text-white mb-6">{pageTitle}</h1>}
+            {children}
+          </main>
+          <footer className="border-t border-gray-800 py-4">
+            <div className="max-w-6xl mx-auto px-4 flex items-center justify-center gap-2 text-xs text-gray-600">
+              <IconLink className="w-3.5 h-3.5" />
+              <span>{t('brand')}</span>
+              <span>·</span>
+              <Link href="/pub/play" className="hover:text-gray-400">{t('nav_play')}</Link>
+              <span>·</span>
+              <Link href="/pending" className="hover:text-gray-400">{t('admin')}</Link>
+            </div>
+          </footer>
+        </div>
       </div>
     </>
   );

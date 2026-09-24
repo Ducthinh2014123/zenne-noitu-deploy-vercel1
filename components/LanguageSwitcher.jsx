@@ -4,7 +4,7 @@ import { IconGlobe, IconCheck } from './icons';
 
 // Bo doi ngon ngu giao dien web - danh sach hon 300 ngon ngu, co the go tim
 // theo ma (en, vi...) hoac ten (English, Tieng Viet...).
-export default function LanguageSwitcher() {
+export default function LanguageSwitcher({ inSidebar = false }) {
   const { lang, setLang, t } = useI18n();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -21,18 +21,30 @@ export default function LanguageSwitcher() {
   const results = searchLanguages(query, 40);
 
   return (
-    <div className="relative" ref={boxRef}>
+    <div className={`relative ${inSidebar ? 'w-full' : ''}`} ref={boxRef}>
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
         title={t('language_switcher_title')}
-        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800 whitespace-nowrap"
+        className={
+          inSidebar
+            ? "flex items-center h-10 w-full px-2.5 rounded-xl text-sm font-medium text-white/80 hover:text-white hover:bg-white/15 whitespace-nowrap transition-colors"
+            : "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800 whitespace-nowrap"
+        }
       >
-        <IconGlobe className="w-4 h-4" />
-        <span className="hidden md:inline uppercase">{lang}</span>
+        <div className={inSidebar ? "w-8 h-8 flex items-center justify-center flex-shrink-0" : ""}>
+          <IconGlobe className={inSidebar ? "w-5 h-5" : "w-4 h-4"} />
+        </div>
+        <span className={inSidebar ? "ml-3 uppercase font-semibold text-xs tracking-wider" : "hidden md:inline uppercase"}>
+          {lang}
+        </span>
       </button>
       {open && (
-        <div className="absolute right-0 mt-2 w-72 max-h-96 overflow-hidden flex flex-col bg-gray-900 border border-gray-700 rounded-xl shadow-2xl z-50">
+        <div className={
+          inSidebar
+            ? "absolute bottom-12 left-1 right-1 max-h-72 overflow-hidden flex flex-col bg-gray-900 border border-gray-700 rounded-xl shadow-2xl z-50 text-white"
+            : "absolute right-0 mt-2 w-72 max-h-96 overflow-hidden flex flex-col bg-gray-900 border border-gray-700 rounded-xl shadow-2xl z-50"
+        }>
           <div className="p-2 border-b border-gray-800">
             <input
               autoFocus

@@ -63,12 +63,19 @@ export default function SnakeGame() {
     }
   }, [score, best]);
 
+  const submitScore = useCallback((scoreToSubmit) => {
+    const s = scoreToSubmit !== undefined ? scoreToSubmit : score;
+    if (authStatus === 'authenticated' && s > 0) {
+      const token = sessionTokenRef.current;
+      if (token) pubApi.submitGameScore('snake', s, token).catch(() => { /* im lang neu loi */ });
+    }
+  }, [authStatus, score]);
+
   useEffect(() => {
     if (gameOver && authStatus === 'authenticated' && score > 0) {
-      const token = sessionTokenRef.current;
-      if (token) pubApi.submitGameScore('snake', score, token).catch(() => { /* im lang neu loi */ });
+      submitScore(score);
     }
-  }, [gameOver, authStatus, score]);
+  }, [gameOver, authStatus, score, submitScore]);
 
   const setDirection = useCallback((nx, ny) => {
     if (dirLockRef.current) return;
@@ -138,6 +145,9 @@ export default function SnakeGame() {
   }
 
   function newGame() {
+    if (score > 0) {
+      submitScore(score);
+    }
     const s = initialSnake();
     setSnake(s);
     setFood(randCell(s));

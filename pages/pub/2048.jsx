@@ -147,13 +147,20 @@ export default function Game2048() {
     }
   }, [score, best]);
 
-  // Ghi diem len bang xep hang chung khi ket thuc van (chi khi da dang nhap).
-  useEffect(() => {
-    if (gameOver && authStatus === 'authenticated' && score > 0) {
+  const submitScore = useCallback((scoreToSubmit) => {
+    const s = scoreToSubmit !== undefined ? scoreToSubmit : score;
+    if (authStatus === 'authenticated' && s > 0) {
       const token = sessionTokenRef.current;
-      if (token) pubApi.submitGameScore('2048', score, token).catch(() => { /* im lang neu loi */ });
+      if (token) pubApi.submitGameScore('2048', s, token).catch(() => { /* im lang neu loi */ });
     }
-  }, [gameOver, authStatus, score]);
+  }, [authStatus, score]);
+
+  // Ghi diem len bang xep hang chung khi thang van hoac ket thuc van (chi khi da dang nhap).
+  useEffect(() => {
+    if ((gameOver || won) && authStatus === 'authenticated' && score > 0) {
+      submitScore(score);
+    }
+  }, [gameOver, won, authStatus, score, submitScore]);
 
   const handleMove = useCallback((direction) => {
     if (gameOver || (won && !keepPlaying)) return;
@@ -198,6 +205,9 @@ export default function Game2048() {
   }
 
   function newGame() {
+    if (score > 0) {
+      submitScore(score);
+    }
     setGrid(addRandomTile(addRandomTile(emptyGrid())));
     setScore(0);
     setGameOver(false);
