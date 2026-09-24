@@ -24,12 +24,17 @@ const PwStrength = ({ pw }) => { const n=[/.{8,}/,/[A-Z]/,/[0-9]/,/[^A-Za-z0-9]/
 export default function AuthLogin() {
   const router = useRouter();
   const { status } = useSession();
-  const { callbackUrl, error: qError } = router.query;
+  const { callbackUrl, error: qError, tab: qTab } = router.query;
 
   const [tab,       setTab]       = useState('login');
   const [loading,   setLoading]   = useState('');
   const [msg,       setMsg]       = useState({ type:'', text:'' });
   const [showAdmin, setShowAdmin] = useState(false);
+
+  useEffect(() => {
+    if (qTab === 'register') setTab('register');
+    else if (qTab === 'login') setTab('login');
+  }, [qTab]);
 
   // Email login
   const [lEmail,  setLEmail]  = useState('');
@@ -383,191 +388,449 @@ export default function AuthLogin() {
     );
   }
 
-  // ═══ MAIN LOGIN PAGE ═══
+  // ═══ MAIN LOGIN PAGE (CodeCandy Morphing Layout) ═══
+  const isActive = tab === 'register';
+
   return (
     <>
-      <Head><title>Đăng nhập — Nối Từ Bot</title></Head>
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center p-4"
-        style={{backgroundImage:'radial-gradient(ellipse at top,rgba(99,102,241,.1) 0%,transparent 55%)'}}>
-        <div className="w-full max-w-md">
-          <div className="text-center mb-7">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-3 bg-indigo-600/15 border border-indigo-500/25 shadow-lg text-indigo-400">
-              <IconLink className="w-7 h-7" />
-            </div>
-            <h1 className="text-2xl font-bold text-white">Nối Từ Bot</h1>
-            <p className="text-gray-500 text-sm mt-0.5">Đăng nhập để tiếp tục</p>
+      <Head><title>{isActive ? 'Đăng ký' : 'Đăng nhập'} — Nối Từ Bot</title></Head>
+      <div className="auth-wrapper"
+        style={{ backgroundImage: 'radial-gradient(ellipse at top, rgba(255, 53, 45, 0.08) 0%, transparent 60%)' }}>
+        
+        {/* Main Auth Container */}
+        <div className={`auth-container ${isActive ? 'active' : ''}`}>
+          
+          {/* Mobile Tab Header (< 768px) */}
+          <div className="md:hidden flex border-b border-gray-800 bg-gray-900/90">
+            <button
+              type="button"
+              onClick={() => { setTab('login'); setMsg({ type:'', text:'' }); }}
+              className={`flex-1 py-3 text-sm font-semibold flex items-center justify-center gap-1.5 border-b-2 transition-colors ${
+                !isActive ? 'text-white border-[#ff352d] bg-[#ff352d]/10' : 'text-gray-400 border-transparent'
+              }`}
+            >
+              <IconLogIn className="w-4 h-4" /> Đăng nhập
+            </button>
+            <button
+              type="button"
+              onClick={() => { setTab('register'); setMsg({ type:'', text:'' }); }}
+              className={`flex-1 py-3 text-sm font-semibold flex items-center justify-center gap-1.5 border-b-2 transition-colors ${
+                isActive ? 'text-white border-[#ff352d] bg-[#ff352d]/10' : 'text-gray-400 border-transparent'
+              }`}
+            >
+              <IconSparkles className="w-4 h-4" /> Đăng ký
+            </button>
           </div>
 
-          <div className="bg-gray-900/90 border border-gray-800 rounded-2xl shadow-2xl shadow-black/50 overflow-hidden">
-            {/* Tabs */}
-            <div className="flex border-b border-gray-800">
-              {[['login',IconLogIn,'Đăng nhập'],['register',IconSparkles,'Đăng ký']].map(([k,Ic,l])=>(
-                <button key={k} onClick={()=>{setTab(k);setMsg({type:'',text:''})}}
-                  className={`flex-1 flex items-center justify-center gap-1.5 py-4 text-sm font-semibold transition-colors border-b-2 ${tab===k?'text-white border-indigo-500 bg-indigo-500/5':'text-gray-500 border-transparent hover:text-gray-300'}`}>
-                  <Ic className="w-4 h-4" /> {l}
-                </button>
-              ))}
-            </div>
-
-            <div className="p-6">
-              {/* Alert */}
-              {msg.text && (
-                <div className={`flex gap-2 items-start p-3.5 rounded-xl text-sm mb-5 border ${
-                  msg.type==='success' ? 'bg-green-900/30 border-green-700/50 text-green-400' :
-                  msg.type==='info'    ? 'bg-indigo-900/30 border-indigo-700/50 text-indigo-300' :
-                                         'bg-red-900/30 border-red-700/50 text-red-400'
-                }`}>
-                  {msg.type==='success'?<IconCheckCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />:msg.type==='info'?<IconInfo className="w-4 h-4 flex-shrink-0 mt-0.5" />:<IconAlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />}
-                  <span>{msg.text}</span>
-                </div>
-              )}
-
-              {tab==='login' && (
-                <>
-                  {/* OAuth buttons */}
-                  <div className="space-y-2.5">
-                    <OAuthBtn icon={<GoogleIcon/>}   label="Tiếp tục với Google"   loading={loading==='google'}   disabled={any&&loading!=='google'}   onClick={()=>oAuth('google')}/>
-                    <OAuthBtn icon={<GithubIcon/>}   label="Tiếp tục với GitHub"   loading={loading==='github'}   disabled={any&&loading!=='github'}   onClick={()=>oAuth('github')}/>
-                    <OAuthBtn icon={<DiscordIcon/>}  label="Tiếp tục với Discord"  loading={loading==='discord'}  disabled={any&&loading!=='discord'}  onClick={()=>oAuth('discord')}/>
-                  </div>
-
-                  <Divider text="hoặc đăng nhập bằng email"/>
-
-                  <form onSubmit={doLogin} className="space-y-4" noValidate>
-                    {/* Email */}
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Email</label>
-                      <div className="relative">
-                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"><IconMail className="w-4 h-4" /></div>
-                        <input type="email" placeholder="ban@email.com" autoComplete="email"
-                          className={`w-full bg-gray-800 border rounded-xl pl-10 pr-4 py-3 text-white placeholder-gray-600 focus:outline-none transition-colors text-sm ${lErr.email?'border-red-600':'border-gray-700 focus:border-indigo-500'}`}
-                          value={lEmail} onChange={e=>setLEmail(e.target.value)}/>
-                      </div>
-                      {lErr.email && <p className="mt-1 text-xs text-red-400">{lErr.email}</p>}
-                    </div>
-                    {/* Password */}
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Mật khẩu</label>
-                      <div className="relative">
-                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"><IconKey className="w-4 h-4" /></div>
-                        <input type={showLPw?'text':'password'} placeholder="••••••••" autoComplete="current-password"
-                          className={`w-full bg-gray-800 border rounded-xl pl-10 pr-12 py-3 text-white placeholder-gray-600 focus:outline-none transition-colors text-sm ${lErr.pw?'border-red-600':'border-gray-700 focus:border-indigo-500'}`}
-                          value={lPw} onChange={e=>setLPw(e.target.value)}/>
-                        <button type="button" onClick={()=>setShowLPw(s=>!s)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300">{showLPw?<IconEyeOff className="w-4 h-4" />:<IconEye className="w-4 h-4" />}</button>
-                      </div>
-                      {lErr.pw && <p className="mt-1 text-xs text-red-400">{lErr.pw}</p>}
-                      <div className="text-right mt-1.5">
-                        <Link href="/auth/reset-password" className="text-xs text-indigo-400 hover:text-indigo-300 font-medium">Quên mật khẩu?</Link>
-                      </div>
-                    </div>
-                    <button type="submit" disabled={any}
-                      className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 text-white font-semibold rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-indigo-900/30">
-                      {loading==='creds'?<><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/>Đang đăng nhập...</>:<><IconRocket className="w-4 h-4" /> Đăng nhập</>}
-                    </button>
-                  </form>
-
-                  <p className="text-center text-sm text-gray-500 mt-5">Chưa có tài khoản?{' '}<button onClick={()=>setTab('register')} className="text-indigo-400 hover:text-indigo-300 font-medium">Đăng ký ngay →</button></p>
-                </>
-              )}
-
-              {tab==='register' && (
-                <>
-                  {/* Quick OAuth register */}
-                  <p className="text-xs text-gray-500 text-center mb-2">Đăng ký nhanh bằng</p>
-                  <div className="grid grid-cols-3 gap-2 mb-1">
-                    {[['google',<GoogleIcon/>],['github',<GithubIcon/>],['discord',<DiscordIcon/>]].map(([p,ic])=>(
-                      <button key={p} onClick={()=>oAuth(p)} disabled={any}
-                        title={'Đăng nhập với '+p}
-                        className="flex items-center justify-center py-2.5 bg-gray-800 border border-gray-700 rounded-xl hover:border-gray-500 hover:bg-gray-700 disabled:opacity-50">
-                        {ic}
-                      </button>
-                    ))}
-                  </div>
-
-                  <Divider text="hoặc đăng ký bằng email"/>
-
-                  <form onSubmit={doRegister} className="space-y-4" noValidate>
-                    {/* Username */}
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Tên đăng nhập</label>
-                      <div className="relative">
-                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"><IconUser className="w-4 h-4" /></div>
-                        <input type="text" placeholder="noitufan123" autoComplete="username" minLength={3} maxLength={30}
-                          className={`w-full bg-gray-800 border rounded-xl pl-10 pr-4 py-3 text-white placeholder-gray-600 focus:outline-none transition-colors text-sm ${rErr.name?'border-red-600':'border-gray-700 focus:border-indigo-500'}`}
-                          value={rName} onChange={e=>setRName(e.target.value)}/>
-                      </div>
-                      {rErr.name && <p className="mt-1 text-xs text-red-400">{rErr.name}</p>}
-                    </div>
-                    {/* Email */}
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Email</label>
-                      <div className="relative">
-                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"><IconMail className="w-4 h-4" /></div>
-                        <input type="email" placeholder="ban@email.com" autoComplete="email"
-                          className={`w-full bg-gray-800 border rounded-xl pl-10 pr-4 py-3 text-white placeholder-gray-600 focus:outline-none transition-colors text-sm ${rErr.email?'border-red-600':'border-gray-700 focus:border-indigo-500'}`}
-                          value={rEmail} onChange={e=>setREmail(e.target.value)}/>
-                      </div>
-                      {rErr.email && <p className="mt-1 text-xs text-red-400">{rErr.email}</p>}
-                    </div>
-                    {/* Password */}
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Mật khẩu</label>
-                      <div className="relative">
-                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"><IconKey className="w-4 h-4" /></div>
-                        <input type={showRPw?'text':'password'} placeholder="tối thiểu 6 ký tự" autoComplete="new-password"
-                          className={`w-full bg-gray-800 border rounded-xl pl-10 pr-12 py-3 text-white placeholder-gray-600 focus:outline-none transition-colors text-sm ${rErr.pw?'border-red-600':'border-gray-700 focus:border-indigo-500'}`}
-                          value={rPw} onChange={e=>setRPw(e.target.value)}/>
-                        <button type="button" onClick={()=>setShowRPw(s=>!s)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300">{showRPw?<IconEyeOff className="w-4 h-4" />:<IconEye className="w-4 h-4" />}</button>
-                      </div>
-                      <PwStrength pw={rPw}/>
-                      {rErr.pw && <p className="mt-1 text-xs text-red-400">{rErr.pw}</p>}
-                    </div>
-                    {/* Confirm password */}
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Xác nhận mật khẩu</label>
-                      <div className="relative">
-                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"><IconKey className="w-4 h-4" /></div>
-                        <input type={showRPw?'text':'password'} placeholder="nhập lại mật khẩu" autoComplete="new-password"
-                          className={`w-full bg-gray-800 border rounded-xl pl-10 pr-10 py-3 text-white placeholder-gray-600 focus:outline-none transition-colors text-sm ${rErr.pw2?'border-red-600':rPw2&&rPw2===rPw?'border-green-600':'border-gray-700 focus:border-indigo-500'}`}
-                          value={rPw2} onChange={e=>setRPw2(e.target.value)}/>
-                        {rPw2&&rPw2===rPw&&<div className="absolute right-3 top-1/2 -translate-y-1/2 text-green-400"><IconCheck className="w-4 h-4" /></div>}
-                      </div>
-                      {rErr.pw2 && <p className="mt-1 text-xs text-red-400">{rErr.pw2}</p>}
-                    </div>
-                    <button type="submit" disabled={any}
-                      className="w-full py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 disabled:opacity-60 text-white font-semibold rounded-xl flex items-center justify-center gap-2">
-                      {loading==='reg'?<><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/>Đang tạo...</>:<><IconSparkles className="w-4 h-4" /> Tạo tài khoản</>}
-                    </button>
-                  </form>
-                  <p className="text-center text-sm text-gray-500 mt-4">Đã có tài khoản?{' '}<button onClick={()=>setTab('login')} className="text-indigo-400 hover:text-indigo-300 font-medium">Đăng nhập</button></p>
-                </>
-              )}
-
-              {/* Admin API Key */}
-              <div className="mt-6 border-t border-gray-800 pt-4">
-                <button onClick={()=>setShowAdmin(s=>!s)}
-                  className="w-full flex items-center justify-between text-xs text-gray-600 hover:text-gray-400">
-                  <span className="flex items-center gap-1.5"><IconLock className="w-3.5 h-3.5" /> Admin — đăng nhập bằng API Key</span>
-                  <svg className={`w-3.5 h-3.5 transition-transform ${showAdmin?'rotate-180':''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"/></svg>
-                </button>
-                {showAdmin && (
-                  <form onSubmit={doAdminLogin} className="mt-3 space-y-3">
-                    {aErr && <div className="p-2.5 bg-red-900/30 border border-red-700/50 rounded-lg text-red-400 text-xs">{aErr}</div>}
-                    <input type="url" placeholder="API URL (https://...)" required value={aUrl} onChange={e=>setAUrl(e.target.value)}
-                      className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500 text-sm"/>
-                    <input type="password" placeholder="API Key" required value={aKey} onChange={e=>setAKey(e.target.value)}
-                      className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500 text-sm"/>
-                    <button type="submit" disabled={aLoading}
-                      className="w-full py-2.5 bg-gray-700 hover:bg-gray-600 disabled:opacity-60 text-white font-medium rounded-xl text-sm flex items-center justify-center gap-2">
-                      {aLoading?<><div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"/>Đang kết nối...</>:<><IconLogIn className="w-3.5 h-3.5" /> Vào Admin Dashboard</>}
-                    </button>
-                  </form>
-                )}
+          {/* Form Panel: LOGIN */}
+          <div className="form-panel form-panel--login">
+            <div className="mb-4">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-[#ff352d]/20 border border-[#ff352d]/30 text-[#ff352d]">
+                  <IconLink className="w-4 h-4" />
+                </span>
+                <span className="font-bold text-sm text-gray-300">Nối Từ Bot</span>
               </div>
+              <h1 className="text-2xl font-bold text-white tracking-tight">Đăng nhập</h1>
+              <p className="text-xs text-gray-400 mt-1">Chọn phương thức thuận tiện nhất cho bạn</p>
+            </div>
+
+            {/* Alert */}
+            {msg.text && !isActive && (
+              <div className={`flex gap-2 items-start p-3 rounded-xl text-xs mb-3 border ${
+                msg.type === 'success' ? 'bg-green-900/30 border-green-700/50 text-green-400' :
+                msg.type === 'info'    ? 'bg-indigo-900/30 border-indigo-700/50 text-indigo-300' :
+                                         'bg-red-900/30 border-red-700/50 text-red-400'
+              }`}>
+                {msg.type === 'success' ? <IconCheckCircle className="w-4 h-4 flex-shrink-0" /> :
+                 msg.type === 'info'    ? <IconInfo className="w-4 h-4 flex-shrink-0" /> :
+                                          <IconAlertTriangle className="w-4 h-4 flex-shrink-0" />}
+                <span>{msg.text}</span>
+              </div>
+            )}
+
+            {/* Quick OAuth row */}
+            <div className="grid grid-cols-3 gap-2 mb-3">
+              <button
+                type="button"
+                onClick={() => oAuth('google')}
+                disabled={any}
+                title="Đăng nhập bằng Google"
+                className="flex items-center justify-center py-2.5 bg-gray-800/80 hover:bg-gray-700 border border-gray-700 hover:border-gray-500 rounded-xl transition-all disabled:opacity-50"
+              >
+                <GoogleIcon />
+              </button>
+              <button
+                type="button"
+                onClick={() => oAuth('github')}
+                disabled={any}
+                title="Đăng nhập bằng GitHub"
+                className="flex items-center justify-center py-2.5 bg-gray-800/80 hover:bg-gray-700 border border-gray-700 hover:border-gray-500 rounded-xl transition-all disabled:opacity-50 text-white"
+              >
+                <GithubIcon />
+              </button>
+              <button
+                type="button"
+                onClick={() => oAuth('discord')}
+                disabled={any}
+                title="Đăng nhập bằng Discord"
+                className="flex items-center justify-center py-2.5 bg-gray-800/80 hover:bg-gray-700 border border-gray-700 hover:border-gray-500 rounded-xl transition-all disabled:opacity-50"
+              >
+                <DiscordIcon />
+              </button>
+            </div>
+
+            <Divider text="hoặc email" />
+
+            <form onSubmit={doLogin} className="space-y-3" noValidate>
+              <div>
+                <label className="block text-[11px] font-semibold text-gray-400 mb-1 uppercase tracking-wider">Email</label>
+                <div className="relative">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                    <IconMail className="w-4 h-4" />
+                  </div>
+                  <input
+                    type="email"
+                    placeholder="ban@email.com"
+                    autoComplete="email"
+                    className={`w-full bg-gray-800/90 border rounded-xl pl-9 pr-3 py-2.5 text-white placeholder-gray-500 focus:outline-none transition-colors text-sm ${
+                      lErr.email ? 'border-red-600' : 'border-gray-700 focus:border-[#ff352d]'
+                    }`}
+                    value={lEmail}
+                    onChange={e => setLEmail(e.target.value)}
+                  />
+                </div>
+                {lErr.email && <p className="mt-1 text-xs text-red-400">{lErr.email}</p>}
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Mật khẩu</label>
+                  <Link href="/auth/reset-password" className="text-xs text-red-400 hover:text-red-300 font-medium">Quên?</Link>
+                </div>
+                <div className="relative">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                    <IconKey className="w-4 h-4" />
+                  </div>
+                  <input
+                    type={showLPw ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    autoComplete="current-password"
+                    className={`w-full bg-gray-800/90 border rounded-xl pl-9 pr-10 py-2.5 text-white placeholder-gray-500 focus:outline-none transition-colors text-sm ${
+                      lErr.pw ? 'border-red-600' : 'border-gray-700 focus:border-[#ff352d]'
+                    }`}
+                    value={lPw}
+                    onChange={e => setLPw(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowLPw(s => !s)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
+                  >
+                    {showLPw ? <IconEyeOff className="w-4 h-4" /> : <IconEye className="w-4 h-4" />}
+                  </button>
+                </div>
+                {lErr.pw && <p className="mt-1 text-xs text-red-400">{lErr.pw}</p>}
+              </div>
+
+              <button
+                type="submit"
+                disabled={any}
+                className="w-full py-2.5 mt-2 bg-[#ff352d] hover:bg-[#e0261f] disabled:opacity-60 text-white font-semibold rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-red-950/40 transition-all text-sm active:scale-[0.98]"
+              >
+                {loading === 'creds' ? (
+                  <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Đang đăng nhập...</>
+                ) : (
+                  <><IconRocket className="w-4 h-4" /> Đăng nhập</>
+                )}
+              </button>
+            </form>
+
+            {/* Mobile switch */}
+            <p className="md:hidden text-center text-xs text-gray-400 mt-4">
+              Chưa có tài khoản?{' '}
+              <button
+                type="button"
+                onClick={() => { setTab('register'); setMsg({ type:'', text:'' }); }}
+                className="text-[#ff352d] font-semibold hover:underline"
+              >
+                Đăng ký ngay
+              </button>
+            </p>
+
+            {/* Admin Key Collapsible */}
+            <div className="mt-4 border-t border-gray-800/80 pt-3">
+              <button
+                type="button"
+                onClick={() => setShowAdmin(s => !s)}
+                className="w-full flex items-center justify-between text-[11px] text-gray-500 hover:text-gray-300"
+              >
+                <span className="flex items-center gap-1.5">
+                  <IconLock className="w-3 h-3" /> Đăng nhập Admin bằng API Key
+                </span>
+                <svg className={`w-3 h-3 transition-transform ${showAdmin ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {showAdmin && (
+                <form onSubmit={doAdminLogin} className="mt-2 space-y-2">
+                  {aErr && <div className="p-2 bg-red-900/30 border border-red-700/50 rounded-lg text-red-400 text-[11px]">{aErr}</div>}
+                  <input
+                    type="url"
+                    placeholder="API URL (https://...)"
+                    required
+                    value={aUrl}
+                    onChange={e => setAUrl(e.target.value)}
+                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-white text-xs focus:outline-none focus:border-[#ff352d]"
+                  />
+                  <input
+                    type="password"
+                    placeholder="API Key"
+                    required
+                    value={aKey}
+                    onChange={e => setAKey(e.target.value)}
+                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-white text-xs focus:outline-none focus:border-[#ff352d]"
+                  />
+                  <button
+                    type="submit"
+                    disabled={aLoading}
+                    className="w-full py-1.5 bg-gray-700 hover:bg-gray-600 disabled:opacity-60 text-white font-medium rounded-lg text-xs flex items-center justify-center gap-1.5"
+                  >
+                    {aLoading ? <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <IconLogIn className="w-3 h-3" />}
+                    Vào Admin
+                  </button>
+                </form>
+              )}
             </div>
           </div>
-          <p className="text-center text-xs text-gray-700 mt-5"><a href="/pub" className="hover:text-gray-500">← Trang public</a></p>
+
+          {/* Form Panel: REGISTER */}
+          <div className="form-panel form-panel--register">
+            <div className="mb-4">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-[#ff352d]/20 border border-[#ff352d]/30 text-[#ff352d]">
+                  <IconSparkles className="w-4 h-4" />
+                </span>
+                <span className="font-bold text-sm text-gray-300">Nối Từ Bot</span>
+              </div>
+              <h1 className="text-2xl font-bold text-white tracking-tight">Tạo tài khoản</h1>
+              <p className="text-xs text-gray-400 mt-1">Đăng ký nhanh hoặc dùng email của bạn</p>
+            </div>
+
+            {/* Alert */}
+            {msg.text && isActive && (
+              <div className={`flex gap-2 items-start p-3 rounded-xl text-xs mb-3 border ${
+                msg.type === 'success' ? 'bg-green-900/30 border-green-700/50 text-green-400' :
+                msg.type === 'info'    ? 'bg-indigo-900/30 border-indigo-700/50 text-indigo-300' :
+                                         'bg-red-900/30 border-red-700/50 text-red-400'
+              }`}>
+                {msg.type === 'success' ? <IconCheckCircle className="w-4 h-4 flex-shrink-0" /> :
+                 msg.type === 'info'    ? <IconInfo className="w-4 h-4 flex-shrink-0" /> :
+                                          <IconAlertTriangle className="w-4 h-4 flex-shrink-0" />}
+                <span>{msg.text}</span>
+              </div>
+            )}
+
+            {/* Quick OAuth row */}
+            <div className="grid grid-cols-3 gap-2 mb-3">
+              <button
+                type="button"
+                onClick={() => oAuth('google')}
+                disabled={any}
+                title="Đăng ký với Google"
+                className="flex items-center justify-center py-2.5 bg-gray-800/80 hover:bg-gray-700 border border-gray-700 hover:border-gray-500 rounded-xl transition-all disabled:opacity-50"
+              >
+                <GoogleIcon />
+              </button>
+              <button
+                type="button"
+                onClick={() => oAuth('github')}
+                disabled={any}
+                title="Đăng ký với GitHub"
+                className="flex items-center justify-center py-2.5 bg-gray-800/80 hover:bg-gray-700 border border-gray-700 hover:border-gray-500 rounded-xl transition-all disabled:opacity-50 text-white"
+              >
+                <GithubIcon />
+              </button>
+              <button
+                type="button"
+                onClick={() => oAuth('discord')}
+                disabled={any}
+                title="Đăng ký với Discord"
+                className="flex items-center justify-center py-2.5 bg-gray-800/80 hover:bg-gray-700 border border-gray-700 hover:border-gray-500 rounded-xl transition-all disabled:opacity-50"
+              >
+                <DiscordIcon />
+              </button>
+            </div>
+
+            <Divider text="hoặc bằng email" />
+
+            <form onSubmit={doRegister} className="space-y-2.5" noValidate>
+              <div>
+                <label className="block text-[11px] font-semibold text-gray-400 mb-1 uppercase tracking-wider">Tên người dùng</label>
+                <div className="relative">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                    <IconUser className="w-4 h-4" />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="noitufan123"
+                    autoComplete="username"
+                    minLength={3}
+                    maxLength={30}
+                    className={`w-full bg-gray-800/90 border rounded-xl pl-9 pr-3 py-2 text-white placeholder-gray-500 focus:outline-none transition-colors text-sm ${
+                      rErr.name ? 'border-red-600' : 'border-gray-700 focus:border-[#ff352d]'
+                    }`}
+                    value={rName}
+                    onChange={e => setRName(e.target.value)}
+                  />
+                </div>
+                {rErr.name && <p className="mt-0.5 text-xs text-red-400">{rErr.name}</p>}
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-gray-400 mb-1 uppercase tracking-wider">Email</label>
+                <div className="relative">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                    <IconMail className="w-4 h-4" />
+                  </div>
+                  <input
+                    type="email"
+                    placeholder="ban@email.com"
+                    autoComplete="email"
+                    className={`w-full bg-gray-800/90 border rounded-xl pl-9 pr-3 py-2 text-white placeholder-gray-500 focus:outline-none transition-colors text-sm ${
+                      rErr.email ? 'border-red-600' : 'border-gray-700 focus:border-[#ff352d]'
+                    }`}
+                    value={rEmail}
+                    onChange={e => setREmail(e.target.value)}
+                  />
+                </div>
+                {rErr.email && <p className="mt-0.5 text-xs text-red-400">{rErr.email}</p>}
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-gray-400 mb-1 uppercase tracking-wider">Mật khẩu</label>
+                <div className="relative">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                    <IconKey className="w-4 h-4" />
+                  </div>
+                  <input
+                    type={showRPw ? 'text' : 'password'}
+                    placeholder="Tối thiểu 6 ký tự"
+                    autoComplete="new-password"
+                    className={`w-full bg-gray-800/90 border rounded-xl pl-9 pr-10 py-2 text-white placeholder-gray-500 focus:outline-none transition-colors text-sm ${
+                      rErr.pw ? 'border-red-600' : 'border-gray-700 focus:border-[#ff352d]'
+                    }`}
+                    value={rPw}
+                    onChange={e => setRPw(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowRPw(s => !s)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
+                  >
+                    {showRPw ? <IconEyeOff className="w-4 h-4" /> : <IconEye className="w-4 h-4" />}
+                  </button>
+                </div>
+                <PwStrength pw={rPw} />
+                {rErr.pw && <p className="mt-0.5 text-xs text-red-400">{rErr.pw}</p>}
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-gray-400 mb-1 uppercase tracking-wider">Xác nhận mật khẩu</label>
+                <div className="relative">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                    <IconKey className="w-4 h-4" />
+                  </div>
+                  <input
+                    type={showRPw ? 'text' : 'password'}
+                    placeholder="Nhập lại mật khẩu"
+                    autoComplete="new-password"
+                    className={`w-full bg-gray-800/90 border rounded-xl pl-9 pr-10 py-2 text-white placeholder-gray-500 focus:outline-none transition-colors text-sm ${
+                      rErr.pw2 ? 'border-red-600' : rPw2 && rPw2 === rPw ? 'border-green-600' : 'border-gray-700 focus:border-[#ff352d]'
+                    }`}
+                    value={rPw2}
+                    onChange={e => setRPw2(e.target.value)}
+                  />
+                  {rPw2 && rPw2 === rPw && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-green-400">
+                      <IconCheck className="w-4 h-4" />
+                    </div>
+                  )}
+                </div>
+                {rErr.pw2 && <p className="mt-0.5 text-xs text-red-400">{rErr.pw2}</p>}
+              </div>
+
+              <button
+                type="submit"
+                disabled={any}
+                className="w-full py-2.5 mt-2 bg-[#ff352d] hover:bg-[#e0261f] disabled:opacity-60 text-white font-semibold rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-red-950/40 transition-all text-sm active:scale-[0.98]"
+              >
+                {loading === 'reg' ? (
+                  <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Đang tạo...</>
+                ) : (
+                  <><IconSparkles className="w-4 h-4" /> Tạo tài khoản</>
+                )}
+              </button>
+            </form>
+
+            {/* Mobile switch */}
+            <p className="md:hidden text-center text-xs text-gray-400 mt-4">
+              Đã có tài khoản?{' '}
+              <button
+                type="button"
+                onClick={() => { setTab('login'); setMsg({ type:'', text:'' }); }}
+                className="text-[#ff352d] font-semibold hover:underline"
+              >
+                Đăng nhập
+              </button>
+            </p>
+          </div>
+
+          {/* Morphing Overlay Panel (CodeCandy) */}
+          <div className="overlay-panel">
+            {/* When at Login state (panel on the right): invite to Register */}
+            <div className="overlay-content overlay-content--signin">
+              <div className="w-16 h-16 rounded-2xl bg-white/15 border border-white/30 flex items-center justify-center text-white mb-6 shadow-md backdrop-blur-sm">
+                <IconSparkles className="w-8 h-8" />
+              </div>
+              <h2 className="text-3xl font-extrabold tracking-tight">Chào bạn mới!</h2>
+              <p className="mt-3 text-sm text-white/90 leading-relaxed max-w-[280px]">
+                Tạo tài khoản ngay để lưu kỷ lục điểm số các trò chơi, leo rank và kết nối cùng cộng đồng Nối Từ!
+              </p>
+              <button
+                type="button"
+                onClick={() => { setTab('register'); setMsg({ type:'', text:'' }); }}
+                className="mt-8 px-8 py-3 rounded-full border-2 border-white text-white font-bold text-sm tracking-wide hover:bg-white hover:text-[#ff352d] transition-all shadow-xl active:scale-95"
+              >
+                Đăng ký ngay
+              </button>
+            </div>
+
+            {/* When at Register state (panel on the left): invite to Login */}
+            <div className="overlay-content overlay-content--signup">
+              <div className="w-16 h-16 rounded-2xl bg-white/15 border border-white/30 flex items-center justify-center text-white mb-6 shadow-md backdrop-blur-sm">
+                <IconShieldCheck className="w-8 h-8" />
+              </div>
+              <h2 className="text-3xl font-extrabold tracking-tight">Mừng bạn trở lại!</h2>
+              <p className="mt-3 text-sm text-white/90 leading-relaxed max-w-[280px]">
+                Nếu bạn đã có tài khoản, hãy đăng nhập để tiếp tục hành trình tranh tài cùng bạn bè nhé!
+              </p>
+              <button
+                type="button"
+                onClick={() => { setTab('login'); setMsg({ type:'', text:'' }); }}
+                className="mt-8 px-8 py-3 rounded-full border-2 border-white text-white font-bold text-sm tracking-wide hover:bg-white hover:text-[#ff352d] transition-all shadow-xl active:scale-95"
+              >
+                Đăng nhập ngay
+              </button>
+            </div>
+          </div>
+
         </div>
+
+        {/* Back to public link */}
+        <p className="absolute bottom-4 text-center text-xs text-gray-500 hover:text-gray-400">
+          <Link href="/pub">← Về trang Public</Link>
+        </p>
       </div>
     </>
   );
