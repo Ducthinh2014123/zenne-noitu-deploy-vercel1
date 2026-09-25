@@ -3,7 +3,7 @@ import PubLayout from '../../components/PubLayout';
 import { pubApi } from '../../lib/pubApi';
 import {
   IconMedal, IconMessageCircle, IconFlame, IconAlertTriangle,
-  IconHash, IconSnake, IconGrid3x3, IconBomb, IconClock,
+  IconHash, IconSnake, IconGrid3x3, IconBomb, IconClock, IconSparkles,
 } from '../../components/icons';
 
 const MEDAL_COLORS = ['text-yellow-400','text-gray-300','text-orange-400'];
@@ -23,6 +23,7 @@ function formatAfkDuration(sec) {
 const MODES = [
   { id: 'words',            kind: 'legacy', Icon: IconMessageCircle, label: 'Số Từ' },
   { id: 'streak',           kind: 'legacy', Icon: IconFlame,         label: 'Streak' },
+  { id: 'game_quiz',        kind: 'game',   game: 'quiz',        Icon: IconSparkles, label: 'Đấu Trí (Quiz)' },
   { id: 'game_afk',         kind: 'game',   game: 'afk',         Icon: IconClock,    label: 'Treo máy (AFK)' },
   { id: 'game_2048',        kind: 'game',   game: '2048',        Icon: IconHash,     label: '2048' },
   { id: 'game_snake',       kind: 'game',   game: 'snake',       Icon: IconSnake,    label: 'Snake' },
