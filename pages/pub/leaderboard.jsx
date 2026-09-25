@@ -3,14 +3,27 @@ import PubLayout from '../../components/PubLayout';
 import { pubApi } from '../../lib/pubApi';
 import {
   IconMedal, IconMessageCircle, IconFlame, IconAlertTriangle,
-  IconHash, IconSnake, IconGrid3x3, IconBomb,
+  IconHash, IconSnake, IconGrid3x3, IconBomb, IconClock,
 } from '../../components/icons';
 
 const MEDAL_COLORS = ['text-yellow-400','text-gray-300','text-orange-400'];
 
+function formatAfkDuration(sec) {
+  const s = Math.max(0, Math.floor(sec || 0));
+  const days = Math.floor(s / 86400);
+  const hours = Math.floor((s % 86400) / 3600);
+  const minutes = Math.floor((s % 3600) / 60);
+  const seconds = s % 60;
+  if (days > 0) return `${days} ngày ${hours} giờ ${minutes} phút`;
+  if (hours > 0) return `${hours} giờ ${minutes} phút ${seconds}s`;
+  if (minutes > 0) return `${minutes} phút ${seconds}s`;
+  return `${seconds} giây`;
+}
+
 const MODES = [
   { id: 'words',            kind: 'legacy', Icon: IconMessageCircle, label: 'Số Từ' },
   { id: 'streak',           kind: 'legacy', Icon: IconFlame,         label: 'Streak' },
+  { id: 'game_afk',         kind: 'game',   game: 'afk',         Icon: IconClock,    label: 'Treo máy (AFK)' },
   { id: 'game_2048',        kind: 'game',   game: '2048',        Icon: IconHash,     label: '2048' },
   { id: 'game_snake',       kind: 'game',   game: 'snake',       Icon: IconSnake,    label: 'Snake' },
   { id: 'game_tictactoe',   kind: 'game',   game: 'tictactoe',   Icon: IconGrid3x3,  label: 'Tic Tac Toe' },
@@ -73,10 +86,15 @@ export default function PubLeaderboard() {
                 </div>
                 <div className="text-right">
                   {curCfg.kind === 'game'
-                    ? <>
-                        <div className="font-bold text-indigo-400 text-lg">{(p.best_score||0).toLocaleString()}</div>
-                        <div className="text-xs text-gray-500">điểm • {p.plays||0} lượt chơi</div>
-                      </>
+                    ? curCfg.game === 'afk'
+                      ? <>
+                          <div className="font-bold text-amber-400 text-lg">{formatAfkDuration(p.best_score)}</div>
+                          <div className="text-xs text-gray-500">tổng thời gian • {p.plays||0} phiên</div>
+                        </>
+                      : <>
+                          <div className="font-bold text-indigo-400 text-lg">{(p.best_score||0).toLocaleString()}</div>
+                          <div className="text-xs text-gray-500">điểm • {p.plays||0} lượt chơi</div>
+                        </>
                     : <>
                         <div className="font-bold text-indigo-400 text-lg">{(p.total_words||0).toLocaleString()}</div>
                         <div className="text-xs text-gray-500">từ • streak {p.max_streak||0}</div>

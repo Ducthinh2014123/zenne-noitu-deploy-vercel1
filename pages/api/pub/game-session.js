@@ -2,7 +2,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth/[...nextauth]';
 import { botApi } from '../../../lib/serverApi';
 
-const ALLOWED_GAMES = ['snake', '2048'];
+const ALLOWED_GAMES = ['snake', '2048', 'afk'];
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });

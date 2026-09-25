@@ -1,8 +1,9 @@
 import Link from 'next/link';
 import PubLayout from '../../components/PubLayout';
-import { IconHash, IconSnake, IconGrid3x3, IconBomb, IconArrowRight, IconTrophy } from '../../components/icons';
+import { IconHash, IconSnake, IconGrid3x3, IconBomb, IconArrowRight, IconTrophy, IconClock } from '../../components/icons';
 
 const GAMES = [
+  { href: '/pub/afk',         Icon: IconClock,    title: 'Treo Máy (AFK)', desc: 'Cắm tab thư giãn, tích lũy thời gian online không giới hạn và đua top cùng cộng đồng!', color: 'text-amber-400 bg-amber-900/20 border-amber-700/40' },
   { href: '/pub/2048',        Icon: IconHash,     title: '2048',        desc: 'Don cac o so giong nhau de dat toi 2048. Diem cang cao cang tot.', color: 'text-yellow-400 bg-yellow-900/20 border-yellow-700/40' },
   { href: '/pub/snake',       Icon: IconSnake,     title: 'Snake',       desc: 'Dieu khien ran an moi, tranh dam vao tuong va chinh minh.', color: 'text-green-400 bg-green-900/20 border-green-700/40' },
   { href: '/pub/tictactoe',   Icon: IconGrid3x3,  title: 'Tic Tac Toe', desc: 'Doi dau voi may (AI), thang cang nhieu van lien tiep cang cao diem.', color: 'text-indigo-400 bg-indigo-900/20 border-indigo-700/40' },
