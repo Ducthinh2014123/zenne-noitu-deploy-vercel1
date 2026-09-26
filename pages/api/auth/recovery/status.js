@@ -7,6 +7,6 @@ export default async function handler(req, res) {
   if (!session) return res.status(200).json({ canResetPassword: false });
 
   const { ok, data } = await recoveryApi('/pub/auth/recovery/status', { session });
-  if (!ok) return res.status(200).json({ canResetPassword: false });
-  return res.status(200).json({ canResetPassword: !!data.canResetPassword });
+  if (!ok) return res.status(200).json({ canResetPassword: false, totpEnabled: false });
+  return res.status(200).json({ canResetPassword: !!data.canResetPassword, totpEnabled: !!data.totpEnabled });
 }

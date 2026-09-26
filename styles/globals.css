@@ -225,4 +225,33 @@ body { background: #030712; color: #f9fafb; font-family: system-ui, sans-serif; 
   }
 }
 
+/* ==================================================
+   Password Strength Component (Paperclip -> Vault)
+   ================================================== */
+:root {
+  --purple: #a855f7;
+}
+
+.password-field {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.password-field:focus-within {
+  border-color: var(--purple) !important;
+  box-shadow:
+    0 0 0 1px rgba(168, 85, 247, 0.35),
+    0 0 24px rgba(168, 85, 247, 0.16) !important;
+}
+
+.strength-card {
+  border: 1px solid color-mix(in srgb, var(--tier, #f87171) 18%, transparent);
+  transition: border-color 0.3s ease, background 0.3s ease, transform 0.2s ease;
+}
+
+.strength-title {
+  color: var(--tier, #f87171); /* paperclip -> vault */
+  transition: color 0.3s ease;
+}
+
+
 
