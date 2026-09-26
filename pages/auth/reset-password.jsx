@@ -405,6 +405,27 @@ export default function ResetPasswordPage() {
         data.recovery_token || ''
       );
 
+      // Tự động kích hoạt session với recovery token vừa nhận để user sang thẳng bước đặt mật khẩu mới
+      if (data.recovery_token) {
+        try {
+          const tokRes = await fetch('/api/auth/recovery/token/verify', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+              'Content-Type': 'application/json',
+              Accept: 'application/json',
+            },
+            body: JSON.stringify({ token: data.recovery_token }),
+          });
+          const tokData = await tokRes.json();
+          if (tokRes.ok && tokData && tokData.success) {
+            await checkSession();
+            setStep('new_password');
+            return;
+          }
+        } catch (_) {}
+      }
+
       setStep('token_ready');
     } catch (_) {
       setMsg({
@@ -824,6 +845,124 @@ export default function ResetPasswordPage() {
                 </p>
 
               </div>
+            )}
+
+
+            {/* =================================================
+                EMAIL REQUEST (NHẬP EMAIL ĐỂ GỬI MÃ)
+            ================================================== */}
+
+            {step === 'email_request' && (
+              <form onSubmit={submitEmailRequest}>
+                <BackBtn onClick={resetAll} />
+
+                <div className="text-center mb-6">
+                  <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center mx-auto mb-3 shadow-inner">
+                    <IconMail className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-lg font-bold text-white">Khôi phục bằng Email</h3>
+                  <p className="text-xs text-gray-400 mt-1 max-w-xs mx-auto">
+                    Nhập địa chỉ email liên kết với tài khoản của bạn để nhận mã xác minh khôi phục mật khẩu.
+                  </p>
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">
+                    Địa chỉ Email
+                  </label>
+                  <div className="relative">
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                      <IconMail className="w-4 h-4" />
+                    </div>
+                    <input
+                      type="email"
+                      required
+                      autoFocus
+                      autoComplete="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="name@example.com"
+                      className="w-full bg-gray-800 border border-gray-700 focus:border-indigo-500 rounded-xl pl-10 pr-4 py-3 text-white placeholder-gray-600 focus:outline-none text-sm transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading || !email.trim()}
+                  className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-semibold rounded-xl flex items-center justify-center gap-2 text-sm transition-all shadow-md active:scale-98"
+                >
+                  {loading ? (
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <IconMail className="w-4 h-4" />
+                  )}
+                  Gửi mã xác minh
+                </button>
+              </form>
+            )}
+
+
+            {/* =================================================
+                EMAIL VERIFY (NHẬP MÃ XÁC MINH TỪ EMAIL)
+            ================================================== */}
+
+            {step === 'email_verify' && (
+              <form onSubmit={submitEmailVerify}>
+                <BackBtn onClick={() => setStep('email_request')}>Đổi email khác</BackBtn>
+
+                <div className="text-center mb-6">
+                  <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center mx-auto mb-3 shadow-inner">
+                    <IconShieldCheck className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-lg font-bold text-white">Nhập mã xác minh</h3>
+                  <p className="text-xs text-gray-400 mt-1 max-w-xs mx-auto">
+                    Mã xác minh đã được gửi đến <b className="text-indigo-300">{email}</b>. Vui lòng kiểm tra hộp thư (cả mục Spam/Rác).
+                  </p>
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider text-center">
+                    Mã xác minh
+                  </label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    autoFocus
+                    required
+                    maxLength={10}
+                    value={code}
+                    onChange={(e) => setCode(e.target.value.trim())}
+                    placeholder="000000"
+                    className="w-full bg-gray-800 border border-gray-700 focus:border-indigo-500 rounded-xl py-3 text-center text-white text-2xl tracking-[0.3em] font-mono focus:outline-none shadow-inner"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading || !code.trim()}
+                  className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-semibold rounded-xl flex items-center justify-center gap-2 text-sm transition-all shadow-md active:scale-98 mb-3"
+                >
+                  {loading ? (
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <IconCheckCircle className="w-4 h-4" />
+                  )}
+                  Xác nhận mã & Tiếp tục
+                </button>
+
+                <div className="flex items-center justify-between text-xs text-gray-400 pt-2 px-1">
+                  <span>Chưa nhận được mã?</span>
+                  <button
+                    type="button"
+                    disabled={loading}
+                    onClick={submitEmailRequest}
+                    className="text-indigo-400 hover:text-indigo-300 font-medium underline"
+                  >
+                    Gửi lại mã
+                  </button>
+                </div>
+              </form>
             )}
 
 
