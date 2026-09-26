@@ -3,7 +3,7 @@ import { signIn, useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Link from 'next/link';
-import { IconLink, IconLogIn, IconSparkles, IconCheckCircle, IconInfo, IconAlertTriangle, IconShieldCheck, IconRocket, IconLock, IconLogOut, IconChevronRight, IconChevronLeft, IconEye, IconEyeOff, IconMail, IconKey, IconUser, IconCheck, IconRefresh, IconClock } from '../../components/icons';
+import { IconLink, IconLogIn, IconSparkles, IconCheckCircle, IconInfo, IconAlertTriangle, IconShieldCheck, IconRocket, IconLock, IconLogOut, IconChevronRight, IconChevronLeft, IconEye, IconEyeOff, IconMail, IconKey, IconUser, IconCheck, IconRefresh, IconClock, IconShield, IconCopy } from '../../components/icons';
 import PasswordStrengthInput from '../../components/PasswordStrengthInput';
 
 // ── Icons
@@ -47,6 +47,9 @@ export default function AuthLogin() {
   const [step2FA,   setStep2FA]   = useState(false);
   const [pending,   setPending]   = useState({ email:'', pw:'' });
   const [totpCode,  setTotpCode]  = useState('');
+  const [tfaMode,   setTfaMode]   = useState('totp'); // 'totp' | 'choices' | 'backup' | 'admin_help'
+  const [backupCodeInput, setBackupCodeInput] = useState('');
+  const [copiedAdminDiscord, setCopiedAdminDiscord] = useState(false);
 
   // Register
   const [rName,  setRName]  = useState('');
@@ -150,6 +153,17 @@ export default function AuthLogin() {
     const res = await signIn('credentials', { email:pending.email, password:pending.pw, totpCode, redirect:false });
     setLoading('');
     if (res?.error === 'Invalid2FA') setMsg({ type:'error', text:'Mã OTP sai, thử lại.' });
+    else if (res?.error)             setMsg({ type:'error', text:'Xác thực thất bại.' });
+  };
+
+  const doBackup2FA = async (e) => {
+    e.preventDefault();
+    const clean = backupCodeInput.trim().toUpperCase();
+    if (!clean) { setMsg({ type:'error', text:'Vui lòng nhập mã Backup Code.' }); return; }
+    setLoading('totp'); setMsg({type:'',text:''});
+    const res = await signIn('credentials', { email:pending.email, password:pending.pw, totpCode: clean, redirect:false });
+    setLoading('');
+    if (res?.error === 'Invalid2FA') setMsg({ type:'error', text:'Mã Backup Code không đúng hoặc đã được sử dụng.' });
     else if (res?.error)             setMsg({ type:'error', text:'Xác thực thất bại.' });
   };
 
@@ -291,20 +305,222 @@ export default function AuthLogin() {
             <p className="text-gray-400 text-sm mt-1">{pending.email}</p>
           </div>
           <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
-            {msg.text && <div className="mb-4 flex items-center gap-2 p-3 bg-red-900/30 border border-red-700/50 rounded-xl text-red-400 text-sm"><IconAlertTriangle className="w-4 h-4 flex-shrink-0" /> {msg.text}</div>}
-            <p className="text-sm text-gray-400 mb-5">Mở <b className="text-white">Google Authenticator</b> / <b className="text-white">Authy</b> và nhập mã 6 chự số:</p>
-            <form onSubmit={do2FA} className="space-y-4">
-              <input type="text" inputMode="numeric" maxLength={6} placeholder="000000"
-                autoFocus autoComplete="one-time-code"
-                value={totpCode} onChange={e=>setTotpCode(e.target.value.replace(/\D/g,''))}
-                className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-4 text-white text-center text-3xl font-mono tracking-[0.5em] placeholder-gray-600 focus:outline-none focus:border-indigo-500"/>
-              <button type="submit" disabled={any || totpCode.length!==6}
-                className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 text-white font-semibold rounded-xl flex items-center justify-center gap-2">
-                {loading==='totp'?<><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/>Đang xác nhận...</>:<><IconCheckCircle className="w-4 h-4" /> Xác nhận</>}
-              </button>
-              <button type="button" onClick={()=>{setStep2FA(false);setPending({email:'',pw:''});setTotpCode('');setMsg({type:'',text:''});}}
-                className="w-full py-2.5 text-gray-500 hover:text-gray-300 text-sm">← Quay lại đăng nhập</button>
-            </form>
+            {msg.text && (
+              <div className="mb-4 flex items-center gap-2 p-3 bg-red-900/30 border border-red-700/50 rounded-xl text-red-400 text-sm">
+                <IconAlertTriangle className="w-4 h-4 flex-shrink-0" /> {msg.text}
+              </div>
+            )}
+
+            {/* Chế độ 1: Nhập OTP 6 số từ Google Authenticator / Authy */}
+            {tfaMode === 'totp' && (
+              <div>
+                <p className="text-sm text-gray-400 mb-5">
+                  Mở <b className="text-white">Google Authenticator</b> / <b className="text-white">Authy</b> và nhập mã 6 chữ số:
+                </p>
+                <form onSubmit={do2FA} className="space-y-4">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    placeholder="000000"
+                    autoFocus
+                    autoComplete="one-time-code"
+                    value={totpCode}
+                    onChange={e => setTotpCode(e.target.value.replace(/\D/g, ''))}
+                    className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-4 text-white text-center text-3xl font-mono tracking-[0.5em] placeholder-gray-600 focus:outline-none focus:border-indigo-500"
+                  />
+                  <button
+                    type="submit"
+                    disabled={any || totpCode.length !== 6}
+                    className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 text-white font-semibold rounded-xl flex items-center justify-center gap-2"
+                  >
+                    {loading === 'totp' ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Đang xác nhận...
+                      </>
+                    ) : (
+                      <>
+                        <IconCheckCircle className="w-4 h-4" /> Xác nhận
+                      </>
+                    )}
+                  </button>
+
+                  <div className="pt-2 text-center">
+                    <button
+                      type="button"
+                      onClick={() => { setTfaMode('choices'); setMsg({ type:'', text:'' }); }}
+                      className="text-xs text-indigo-400 hover:text-indigo-300 font-medium transition-colors"
+                    >
+                      Bạn không có mã One-Time Code?
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStep2FA(false);
+                      setTfaMode('totp');
+                      setPending({ email: '', pw: '' });
+                      setTotpCode('');
+                      setBackupCodeInput('');
+                      setMsg({ type: '', text: '' });
+                    }}
+                    className="w-full py-2 text-gray-500 hover:text-gray-300 text-sm"
+                  >
+                    ← Quay lại đăng nhập
+                  </button>
+                </form>
+              </div>
+            )}
+
+            {/* Màn hình lựa chọn khi không có OTP */}
+            {tfaMode === 'choices' && (
+              <div className="space-y-3">
+                <div className="text-center mb-4">
+                  <h3 className="text-base font-semibold text-white">Bạn không có mã OTP?</h3>
+                  <p className="text-xs text-gray-400 mt-1">Chọn một trong 2 phương án khôi phục dưới đây:</p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => { setTfaMode('backup'); setMsg({ type:'', text:'' }); }}
+                  className="w-full text-left p-3.5 bg-gray-800/80 hover:bg-gray-800 border border-gray-700 hover:border-indigo-500 rounded-xl transition-all group flex items-start gap-3"
+                >
+                  <div className="p-2 bg-indigo-900/40 text-indigo-400 rounded-lg group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                    <IconKey className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold text-white group-hover:text-indigo-300 transition-colors">
+                      1. Nhập Backup Code 2FA
+                    </div>
+                    <div className="text-xs text-gray-400 mt-0.5">
+                      Sử dụng 1 trong 8 mã dự phòng bạn đã nhận khi kích hoạt 2FA
+                    </div>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => { setTfaMode('admin_help'); setMsg({ type:'', text:'' }); }}
+                  className="w-full text-left p-3.5 bg-gray-800/80 hover:bg-gray-800 border border-gray-700 hover:border-amber-500 rounded-xl transition-all group flex items-start gap-3"
+                >
+                  <div className="p-2 bg-amber-900/40 text-amber-400 rounded-lg group-hover:bg-amber-600 group-hover:text-white transition-colors">
+                    <IconShield className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold text-white group-hover:text-amber-300 transition-colors">
+                      2. Liên hệ Admin để xóa 2FA
+                    </div>
+                    <div className="text-xs text-gray-400 mt-0.5">
+                      Kết bạn Admin qua Discord để xác minh chủ tài khoản và gỡ 2FA
+                    </div>
+                  </div>
+                </button>
+
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={() => { setTfaMode('totp'); setMsg({ type:'', text:'' }); }}
+                    className="w-full py-2.5 text-xs text-gray-400 hover:text-gray-200"
+                  >
+                    ← Quay lại nhập mã OTP
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Chế độ 2: Nhập Backup Code */}
+            {tfaMode === 'backup' && (
+              <div>
+                <p className="text-sm text-gray-300 mb-1 font-medium">Nhập mã Backup Code:</p>
+                <p className="text-xs text-gray-500 mb-4">
+                  Mã dự phòng có dạng <code className="text-indigo-300">XXXX-XXXX</code>. Mỗi mã chỉ sử dụng được 1 lần.
+                </p>
+                <form onSubmit={doBackup2FA} className="space-y-4">
+                  <input
+                    type="text"
+                    placeholder="VD: ABCD-1234"
+                    autoFocus
+                    maxLength={12}
+                    value={backupCodeInput}
+                    onChange={e => setBackupCodeInput(e.target.value.toUpperCase())}
+                    className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white text-center text-xl font-mono tracking-widest uppercase placeholder-gray-600 focus:outline-none focus:border-indigo-500"
+                  />
+                  <button
+                    type="submit"
+                    disabled={any || !backupCodeInput.trim()}
+                    className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 text-white font-semibold rounded-xl flex items-center justify-center gap-2"
+                  >
+                    {loading === 'totp' ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Đang xác thực...
+                      </>
+                    ) : (
+                      <>
+                        <IconCheckCircle className="w-4 h-4" /> Xác nhận mã dự phòng
+                      </>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setTfaMode('choices'); setMsg({ type:'', text:'' }); }}
+                    className="w-full py-2 text-gray-500 hover:text-gray-300 text-sm"
+                  >
+                    ← Quay lại lựa chọn khác
+                  </button>
+                </form>
+              </div>
+            )}
+
+            {/* Chế độ 3: Hướng dẫn liên hệ Admin Discord */}
+            {tfaMode === 'admin_help' && (
+              <div className="space-y-4 text-left">
+                <div className="flex items-center gap-2">
+                  <DiscordIcon />
+                  <h3 className="text-base font-bold text-white">Liên hệ Admin gỡ 2FA</h3>
+                </div>
+
+                <p className="text-xs text-gray-300 leading-relaxed">
+                  Nếu bạn mất điện thoại và không còn mã dự phòng, vui lòng kết bạn trực tiếp với Admin trên Discord:
+                </p>
+
+                <div className="p-3.5 bg-gray-950 border border-indigo-900/60 rounded-xl flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-[11px] text-gray-500 uppercase tracking-wider font-semibold">Discord Admin Username</div>
+                    <div className="text-base font-mono font-bold text-indigo-400 select-all">toilathangvnxd</div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText('toilathangvnxd');
+                      setCopiedAdminDiscord(true);
+                      setTimeout(() => setCopiedAdminDiscord(false), 2000);
+                    }}
+                    className="px-3 py-1.5 bg-indigo-900/50 hover:bg-indigo-800 text-indigo-300 text-xs font-semibold rounded-lg border border-indigo-700 flex items-center gap-1.5 transition-all"
+                  >
+                    {copiedAdminDiscord ? <><IconCheck className="w-3.5 h-3.5 text-green-400" /> Đã chép</> : <><IconCopy className="w-3.5 h-3.5" /> Sao chép</>}
+                  </button>
+                </div>
+
+                <div className="p-3 bg-gray-800/60 border border-gray-700/60 rounded-xl text-xs text-gray-400 space-y-1.5">
+                  <div className="font-semibold text-gray-300">Quy trình xác minh:</div>
+                  <p>1. Kết bạn Discord với <b className="text-white">toilathangvnxd</b>.</p>
+                  <p>2. Cung cấp email tài khoản của bạn: <code className="text-indigo-300">{pending.email}</code>.</p>
+                  <p>3. Trả lời các câu hỏi bảo mật để chứng minh bạn là chủ sở hữu (thời gian tạo nick, lịch sử chơi,...).</p>
+                  <p>4. Sau khi xác minh, Admin sẽ dùng lệnh bot để gỡ 2FA để bạn đăng nhập lại bình thường.</p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => { setTfaMode('choices'); setMsg({ type:'', text:'' }); }}
+                  className="w-full py-2.5 text-gray-400 hover:text-gray-200 text-xs text-center"
+                >
+                  ← Quay lại lựa chọn khác
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

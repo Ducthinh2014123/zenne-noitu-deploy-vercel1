@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import PubLayout from '../../components/PubLayout';
-import { IconUser, IconKey, IconShieldCheck, IconLogOut, IconDot, IconCheckCircle, IconInfo, IconShield, IconEye, IconEyeOff } from '../../components/icons';
+import { IconUser, IconKey, IconShieldCheck, IconLogOut, IconDot, IconCheckCircle, IconInfo, IconShield, IconEye, IconEyeOff, IconCopy, IconCheck, IconAlertTriangle } from '../../components/icons';
 
 const PROVIDER_BADGE = {
   google:      { label: 'Google',    dot: 'text-blue-400',   cls: 'bg-blue-900/40 text-blue-300 border-blue-700' },
@@ -52,6 +52,8 @@ export default function AccountPage() {
   const [tfaPw,   setTfaPw]   = useState('');
   const [tfaMsg,  setTfaMsg]  = useState({ type:'', text:'' });
   const [tfaLoad, setTfaLoad] = useState(false);
+  const [backupCodes, setBackupCodes] = useState([]);
+  const [copiedBackup, setCopiedBackup] = useState(false);
 
   useEffect(() => {
     if (status === 'unauthenticated') router.push('/auth/login');
@@ -109,12 +111,47 @@ export default function AccountPage() {
       });
       const d = await r.json();
       if (r.ok) {
-        setTfaMsg({ type:'ok', text: '2FA đã được bật!' });
-        setTfaStep('idle'); setTfaCode(''); setTfaData(null);
         setInfo(prev => ({ ...prev, totp_enabled: true }));
+        setTfaCode('');
+        setTfaData(null);
+        if (d.backup_codes && Array.isArray(d.backup_codes) && d.backup_codes.length > 0) {
+          setBackupCodes(d.backup_codes);
+          setTfaStep('backup_codes');
+          setTfaMsg({ type:'ok', text: 'Bật 2FA thành công! Vui lòng sao chép và lưu trữ các mã dự phòng (Backup Codes) bên dưới.' });
+        } else {
+          setTfaMsg({ type:'ok', text: '2FA đã được bật!' });
+          setTfaStep('idle');
+        }
       } else { setTfaMsg({ type:'err', text: d.error || 'Mã OTP sai' }); }
     } catch { setTfaMsg({ type:'err', text: 'Lỗi kết nối' }); }
     setTfaLoad(false);
+  };
+
+  const copyBackupCodes = () => {
+    if (!backupCodes.length) return;
+    navigator.clipboard.writeText(backupCodes.join('\n'));
+    setCopiedBackup(true);
+    setTimeout(() => setCopiedBackup(false), 2500);
+  };
+
+  const downloadBackupCodes = () => {
+    if (!backupCodes.length) return;
+    const txt = `MÃ KHÔI PHỤC DỰ PHÒNG 2FA (BACKUP CODES) - NỐI TỪ BOT\n` +
+      `Tài khoản: ${info?.username || session?.user?.name || 'User'} (${info?.email || session?.user?.email || ''})\n` +
+      `Thời gian tạo: ${new Date().toLocaleString('vi-VN')}\n\n` +
+      `LƯU Ý QUAN TRỌNG:\n` +
+      `• Mỗi mã dưới đây chỉ dùng được 1 LẦN DUY NHẤT.\n` +
+      `• Dùng khi bạn bị mất quyền truy cập Google Authenticator / Authy để đăng nhập hoặc đổi mật khẩu.\n` +
+      `• Hãy lưu file này ở nơi an toàn, không chia sẻ cho người khác.\n\n` +
+      backupCodes.map((c, i) => `${i + 1}. ${c}`).join('\n') +
+      `\n\nNếu bạn mất toàn bộ mã dự phòng, hãy kết bạn với Admin Discord: toilathangvnxd để được hỗ trợ gỡ 2FA.`;
+    const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `noitu-2fa-backup-codes-${info?.username || 'user'}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const handleDisable2FA = async () => {
@@ -257,6 +294,40 @@ export default function AccountPage() {
                   </Btn>
                 </div>
                 <button onClick={()=>{setTfaStep('idle');setTfaData(null);setTfaCode('');}} className="text-xs text-gray-500 hover:text-gray-400">Hủy</button>
+              </div>
+            </div>
+          )}
+
+          {tfaStep==='backup_codes' && backupCodes.length > 0 && (
+            <div className="space-y-4 mt-2 p-4 bg-indigo-950/40 border border-indigo-700/60 rounded-xl">
+              <div className="flex items-start gap-2">
+                <IconShieldCheck className="w-5 h-5 text-indigo-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <h3 className="text-sm font-bold text-white">Mã khôi phục dự phòng (Backup Codes)</h3>
+                  <p className="text-xs text-gray-300 mt-1">
+                    Hãy lưu trữ 8 mã dự phòng này ở nơi an toàn. Mỗi mã chỉ dùng được <b>1 lần duy nhất</b> để đăng nhập hoặc lấy lại mật khẩu khi bạn mất điện thoại hoặc không mở được ứng dụng xác thực OTP.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 p-3 bg-gray-950/80 border border-gray-800 rounded-xl font-mono text-center text-sm font-bold tracking-wider text-indigo-300 select-all">
+                {backupCodes.map((code, idx) => (
+                  <div key={idx} className="p-2 bg-gray-900/90 rounded-lg border border-gray-800 hover:border-indigo-500/50 transition-colors">
+                    {code}
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex flex-wrap gap-2 pt-1">
+                <Btn onClick={copyBackupCodes} cls="flex items-center gap-1.5 bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 text-xs">
+                  {copiedBackup ? <><IconCheck className="w-3.5 h-3.5 text-green-400" /> Đã sao chép</> : <><IconCopy className="w-3.5 h-3.5" /> Sao chép tất cả</>}
+                </Btn>
+                <Btn onClick={downloadBackupCodes} cls="flex items-center gap-1.5 bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 text-xs">
+                  Tải file .txt
+                </Btn>
+                <Btn onClick={() => { setTfaStep('idle'); }} cls="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs">
+                  Tôi đã lưu mã dự phòng
+                </Btn>
               </div>
             </div>
           )}

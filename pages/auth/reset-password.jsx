@@ -18,6 +18,7 @@ import {
   IconRocket,
   IconChevronRight,
   IconLogIn,
+  IconShield,
 } from '../../components/icons';
 
 /*
@@ -177,6 +178,9 @@ export default function ResetPasswordPage() {
   const [showPw, setShowPw] = useState(false);
   const [totpRequired, setTotpRequired] = useState(false);
   const [totpCode, setTotpCode] = useState('');
+  const [totpMode, setTotpMode] = useState('totp'); // 'totp' | 'choices' | 'backup' | 'admin_help'
+  const [backupCodeInput, setBackupCodeInput] = useState('');
+  const [copiedAdminTotp, setCopiedAdminTotp] = useState(false);
 
   /* ==========================================================
    * CHECK RESET SESSION
@@ -654,15 +658,24 @@ export default function ResetPasswordPage() {
 
 
   /* ==========================================================
-   * SUBMIT 2-STEP / ONE-TIME CODE (TOTP)
+   * SUBMIT 2-STEP / ONE-TIME CODE (TOTP) OR BACKUP CODE
    * ========================================================== */
 
   const submitTotpReset = async (e) => {
     e.preventDefault();
     setMsg(null);
 
-    const codeClean = totpCode.trim();
-    if (codeClean.length !== 6) {
+    const isBackup = totpMode === 'backup';
+    const codeClean = (isBackup ? backupCodeInput : totpCode).trim();
+    if (!codeClean) {
+      setMsg({
+        type: 'error',
+        text: isBackup ? 'Vui lòng nhập mã Backup Code.' : 'Vui lòng nhập đúng 6 chữ số One-Time Code.',
+      });
+      return;
+    }
+
+    if (!isBackup && codeClean.length !== 6) {
       setMsg({
         type: 'error',
         text: 'Vui lòng nhập đúng 6 chữ số One-Time Code.',
@@ -696,7 +709,7 @@ export default function ResetPasswordPage() {
       if (!response.ok || !data || !data.success) {
         setMsg({
           type: 'error',
-          text: data?.message || data?.error || 'Mã One-Time Code không đúng hoặc đã hết hạn.',
+          text: data?.message || data?.error || (isBackup ? 'Mã Backup Code không đúng hoặc đã được sử dụng.' : 'Mã One-Time Code không đúng hoặc đã hết hạn.'),
         });
         return;
       }
@@ -1253,12 +1266,12 @@ export default function ResetPasswordPage() {
 
 
             {/* =================================================
-                TOTP VERIFY (MÃ ONE-TIME CODE 6 SỐ)
+                TOTP VERIFY (MÃ ONE-TIME CODE 6 SỐ / BACKUP CODE / ADMIN HELP)
             ================================================== */}
 
             {step === 'totp_verify' && (
-              <form onSubmit={submitTotpReset}>
-                <BackBtn onClick={() => setStep('new_password')} />
+              <div>
+                <BackBtn onClick={() => { setStep('new_password'); setTotpMode('totp'); }} />
 
                 <div className="text-center mb-6">
                   <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center mx-auto mb-3 shadow-inner">
@@ -1266,37 +1279,200 @@ export default function ResetPasswordPage() {
                   </div>
                   <h3 className="text-xl font-bold text-white">Xác thực 2 bước</h3>
                   <p className="text-xs text-gray-400 mt-1.5 max-w-xs mx-auto">
-                    Tài khoản của bạn đã kích hoạt bảo vệ 2 lớp. Vui lòng mở ứng dụng <b className="text-gray-200">Google Authenticator</b> hoặc <b className="text-gray-200">Authy</b> và nhập mã 6 chữ số:
+                    Tài khoản của bạn đã kích hoạt bảo vệ 2 lớp khi đổi mật khẩu.
                   </p>
                 </div>
 
-                <div className="mb-5">
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    autoFocus
-                    required
-                    maxLength={6}
-                    value={totpCode}
-                    onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, ''))}
-                    placeholder="000000"
-                    className="w-full bg-gray-800 border border-gray-700 focus:border-indigo-500 rounded-xl py-3 text-center text-white text-2xl tracking-[0.5em] font-mono focus:outline-none shadow-inner"
-                  />
-                </div>
+                {totpMode === 'totp' && (
+                  <form onSubmit={submitTotpReset} className="space-y-4">
+                    <p className="text-xs text-gray-300 text-center">
+                      Mở ứng dụng <b className="text-white">Google Authenticator</b> hoặc <b className="text-white">Authy</b> và nhập mã 6 chữ số:
+                    </p>
 
-                <button
-                  type="submit"
-                  disabled={loading || totpCode.length !== 6}
-                  className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 text-white font-semibold rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-indigo-950/40 text-sm active:scale-98 transition-all"
-                >
-                  {loading ? (
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  ) : (
-                    <IconCheckCircle className="w-4 h-4" />
-                  )}
-                  Xác nhận & Hoàn tất đổi mật khẩu
-                </button>
-              </form>
+                    <div>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        autoFocus
+                        required
+                        maxLength={6}
+                        value={totpCode}
+                        onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, ''))}
+                        placeholder="000000"
+                        className="w-full bg-gray-800 border border-gray-700 focus:border-indigo-500 rounded-xl py-3 text-center text-white text-2xl tracking-[0.5em] font-mono focus:outline-none shadow-inner"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={loading || totpCode.length !== 6}
+                      className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 text-white font-semibold rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-indigo-950/40 text-sm active:scale-98 transition-all"
+                    >
+                      {loading ? (
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      ) : (
+                        <IconCheckCircle className="w-4 h-4" />
+                      )}
+                      Xác nhận & Hoàn tất đổi mật khẩu
+                    </button>
+
+                    <div className="pt-2 text-center">
+                      <button
+                        type="button"
+                        onClick={() => { setTotpMode('choices'); setMsg(null); }}
+                        className="text-xs text-indigo-400 hover:text-indigo-300 font-medium transition-colors"
+                      >
+                        Bạn không có mã One-Time Code?
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                {totpMode === 'choices' && (
+                  <div className="space-y-3">
+                    <div className="text-center mb-4">
+                      <h4 className="text-sm font-semibold text-white">Bạn không có mã OTP?</h4>
+                      <p className="text-xs text-gray-400 mt-1">Chọn một trong 2 phương án khôi phục bên dưới:</p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => { setTotpMode('backup'); setMsg(null); }}
+                      className="w-full text-left p-3.5 bg-gray-800/80 hover:bg-gray-800 border border-gray-700 hover:border-indigo-500 rounded-xl transition-all group flex items-start gap-3"
+                    >
+                      <div className="p-2 bg-indigo-900/40 text-indigo-400 rounded-lg group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                        <IconKey className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-semibold text-white group-hover:text-indigo-300 transition-colors">
+                          1. Nhập Backup Code 2FA
+                        </div>
+                        <div className="text-xs text-gray-400 mt-0.5">
+                          Sử dụng 1 trong các mã dự phòng bạn đã nhận khi bật 2FA
+                        </div>
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => { setTotpMode('admin_help'); setMsg(null); }}
+                      className="w-full text-left p-3.5 bg-gray-800/80 hover:bg-gray-800 border border-gray-700 hover:border-amber-500 rounded-xl transition-all group flex items-start gap-3"
+                    >
+                      <div className="p-2 bg-amber-900/40 text-amber-400 rounded-lg group-hover:bg-amber-600 group-hover:text-white transition-colors">
+                        <IconShield className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-semibold text-white group-hover:text-amber-300 transition-colors">
+                          2. Liên hệ Admin để xóa 2FA
+                        </div>
+                        <div className="text-xs text-gray-400 mt-0.5">
+                          Kết bạn Admin qua Discord để xác minh và gỡ 2FA
+                        </div>
+                      </div>
+                    </button>
+
+                    <div className="pt-2 text-center">
+                      <button
+                        type="button"
+                        onClick={() => { setTotpMode('totp'); setMsg(null); }}
+                        className="text-xs text-gray-400 hover:text-gray-200"
+                      >
+                        ← Quay lại nhập mã OTP
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {totpMode === 'backup' && (
+                  <form onSubmit={submitTotpReset} className="space-y-4">
+                    <p className="text-xs text-gray-300 text-center font-medium">
+                      Nhập mã dự phòng (Backup Code) của bạn:
+                    </p>
+                    <p className="text-[11px] text-gray-500 text-center">
+                      Mã dự phòng có dạng <code className="text-indigo-300">XXXX-XXXX</code>. Mỗi mã chỉ sử dụng được 1 lần.
+                    </p>
+
+                    <div>
+                      <input
+                        type="text"
+                        autoFocus
+                        maxLength={12}
+                        value={backupCodeInput}
+                        onChange={(e) => setBackupCodeInput(e.target.value.toUpperCase())}
+                        placeholder="VD: ABCD-1234"
+                        className="w-full bg-gray-800 border border-gray-700 focus:border-indigo-500 rounded-xl py-3 text-center text-white text-xl tracking-widest font-mono uppercase focus:outline-none shadow-inner"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={loading || !backupCodeInput.trim()}
+                      className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 text-white font-semibold rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-indigo-950/40 text-sm active:scale-98 transition-all"
+                    >
+                      {loading ? (
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      ) : (
+                        <IconCheckCircle className="w-4 h-4" />
+                      )}
+                      Xác nhận mã dự phòng & Hoàn tất
+                    </button>
+
+                    <div className="pt-2 text-center">
+                      <button
+                        type="button"
+                        onClick={() => { setTotpMode('choices'); setMsg(null); }}
+                        className="text-xs text-gray-400 hover:text-gray-200"
+                      >
+                        ← Quay lại lựa chọn khác
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                {totpMode === 'admin_help' && (
+                  <div className="space-y-4 text-left">
+                    <p className="text-xs text-gray-300 leading-relaxed">
+                      Nếu bạn mất điện thoại và không còn mã dự phòng (Backup Code), vui lòng kết bạn trực tiếp với Admin trên Discord:
+                    </p>
+
+                    <div className="p-3.5 bg-gray-950 border border-indigo-900/60 rounded-xl flex items-center justify-between gap-3">
+                      <div>
+                        <div className="text-[11px] text-gray-500 uppercase tracking-wider font-semibold">Discord Admin Username</div>
+                        <div className="text-base font-mono font-bold text-indigo-400 select-all">toilathangvnxd</div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText('toilathangvnxd');
+                          setCopiedAdminTotp(true);
+                          setTimeout(() => setCopiedAdminTotp(false), 2000);
+                        }}
+                        className="px-3 py-1.5 bg-indigo-900/50 hover:bg-indigo-800 text-indigo-300 text-xs font-semibold rounded-lg border border-indigo-700 flex items-center gap-1.5 transition-all"
+                      >
+                        {copiedAdminTotp ? <><IconCheck className="w-3.5 h-3.5 text-green-400" /> Đã chép</> : <><IconCopy className="w-3.5 h-3.5" /> Sao chép</>}
+                      </button>
+                    </div>
+
+                    <div className="p-3 bg-gray-800/60 border border-gray-700/60 rounded-xl text-xs text-gray-400 space-y-1.5">
+                      <div className="font-semibold text-gray-300">Quy trình xác minh chủ tài khoản:</div>
+                      <p>1. Kết bạn Discord với Admin <b className="text-white">toilathangvnxd</b>.</p>
+                      <p>2. Cung cấp email tài khoản của bạn: <code className="text-indigo-300">{email || 'email đã đăng ký'}</code>.</p>
+                      <p>3. Trả lời một số câu hỏi bảo mật để xác minh bạn là chủ sở hữu hợp pháp.</p>
+                      <p>4. Sau khi xác minh xong, Admin sẽ dùng lệnh bot để xóa 2FA cho tài khoản của bạn.</p>
+                    </div>
+
+                    <div className="pt-2 text-center">
+                      <button
+                        type="button"
+                        onClick={() => { setTotpMode('choices'); setMsg(null); }}
+                        className="text-xs text-gray-400 hover:text-gray-200"
+                      >
+                        ← Quay lại lựa chọn khác
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
 
 
