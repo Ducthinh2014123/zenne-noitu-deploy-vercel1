@@ -38,7 +38,7 @@ export default function AiAskPage() {
     if (!q || loading) return;
 
     setError('');
-    const timeStr = new Date().toLocaleTimeString([], { hour: '2digit', minute: '2digit' });
+    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const userMsg = { role: 'user', content: q, time: timeStr };
 
     setMessages((prev) => [...prev, userMsg]);
@@ -51,7 +51,7 @@ export default function AiAskPage() {
         role: 'assistant',
         content: res.answer || 'Không có câu trả lời.',
         model: res.model,
-        time: new Date().toLocaleTimeString([], { hour: '2digit', minute: '2digit' }),
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
       setMessages((prev) => [...prev, botMsg]);
     } catch (err) {
@@ -73,7 +73,7 @@ export default function AiAskPage() {
       {
         role: 'assistant',
         content: 'Đã làm mới cuộc hội thoại! Bạn có thể đặt cûu hỏi mới.',
-        time: new Date().toLocaleTimeString([], { hour: '2digit', minute: '2digit' }),
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       },
     ]);
     setError('');
