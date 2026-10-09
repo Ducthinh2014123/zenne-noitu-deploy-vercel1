@@ -16,7 +16,7 @@ export default function AiAskPage() {
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
-      content: 'Xin chào! Mình là Trợ lý Kira AI của hệ thống Zenne Nối Từ. Bạn có câu hỏi hay thắc mắc gì cần giải đáp không?',
+      content: 'Xin chào! Mình là Trợ lý zenne-noitu của hệ thống Zenne Nối Từ. Bạn có câu hỏi hay thắc mắc gì cần giải đáp không?',
       time: '12:00',
     },
   ]);
@@ -38,7 +38,7 @@ export default function AiAskPage() {
     if (!q || loading) return;
 
     setError('');
-    const timeStr = new Date().toLocaleTimeString([], { hour: '2digit', minute: '2digit' });
+    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const userMsg = { role: 'user', content: q, time: timeStr };
 
     setMessages((prev) => [...prev, userMsg]);
@@ -51,11 +51,11 @@ export default function AiAskPage() {
         role: 'assistant',
         content: res.answer || 'Không có câu trả lời.',
         model: res.model,
-        time: new Date().toLocaleTimeString([], { hour: '2digit', minute: '2digit' }),
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
       setMessages((prev) => [...prev, botMsg]);
     } catch (err) {
-      setError(err.message || 'Không thể kết nối đến Kira AI.');
+      setError(err.message || 'Không thể kết nối đến zenne-noitu.');
     } finally {
       setLoading(false);
     }
@@ -73,16 +73,16 @@ export default function AiAskPage() {
       {
         role: 'assistant',
         content: 'Đã làm mới cuộc hội thoại! Bạn có thể đặt cûu hỏi mới.',
-        time: new Date().toLocaleTimeString([], { hour: '2digit', minute: '2digit' }),
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       },
     ]);
     setError('');
   };
 
   return (
-    <PubLayout title="Hỏi AI Kira">
+    <PubLayout title="Hỏi AI zenne-noitu">
       <Head>
-        <title>Hỏi AI Kira — Zenne Nối TỬ</title>
+        <title>Hỏi AI zenne-noitu — Zenne Nối TỬ</title>
       </Head>
 
       <div className="max-w-4l mx-auto flex flex-col h-full min-h-[600px]">
@@ -94,9 +94,9 @@ export default function AiAskPage() {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="font-bold text-white text-base">Trợ lý Kira AI</h2>
+                <h2 className="font-bold text-white text-base">Trợ lý zenne-noitu</h2>
                 <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-indigo-950 text-indigo-300 border border-indigo-800">
-                  kiraai.vn
+                  zenne-noitu
                 </span>
               </div>
               <p className="text-xs text-gray-400">Hỏi đáp thông minh, hỗ trợ luật chøi, kiến thức từ vựng & học tập</p>
@@ -150,7 +150,7 @@ export default function AiAskPage() {
                 <span className="w-2 h-2 rounded-full bg-indigo-400 animate-bounce"></span>
                 <span className="w-2 h-2 rounded-full bg-indigo-400 animate-bounce [animation-delay:0.2s]"></span>
                 <span className="w-2 h-2 rounded-full bg-indigo-400 animate-bounce [animation-delay:0.4s]"></span>
-                <span className="text-xs text-gray-400 ml-1">Kira ai đang suy ngh</span>
+                <span className="text-xs text-gray-400 ml-1">zenne-noitu đang suy ngh</span>
               </div>
             </div>
           )}
