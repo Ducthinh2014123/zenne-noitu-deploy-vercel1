@@ -7,7 +7,7 @@ import LanguageSwitcher from './LanguageSwitcher';
 import {
   IconHome, IconTrophy, IconBookOpen, IconBan, IconGlobe, IconTarget,
   IconGamepad, IconGrid2x2, IconSettings, IconLogOut, IconLogIn, IconChevronRight,
-  IconLink,
+  IconLink, IconSparkles,
 } from './icons';
 
 const NAV = [
@@ -19,6 +19,7 @@ const NAV = [
   { href: '/pub/milestones',  Icon: IconTarget,   key: 'nav_milestones' },
   { href: '/pub/play',        Icon: IconGamepad,  key: 'nav_play' },
   { href: '/pub/games',       Icon: IconGrid2x2,  key: 'nav_games' },
+  { href: '/pub/ai',          Icon: IconSparkles, key: 'nav_ai', label: 'Hỏi AI' },
 ];
 
 export default function PubLayout({ children, title }) {

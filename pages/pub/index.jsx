@@ -3,7 +3,7 @@ import PubLayout from '../../components/PubLayout';
 import { pubApi } from '../../lib/pubApi';
 import {
   IconGlobe, IconUsers, IconBookOpen, IconGamepad, IconTarget, IconTrophy,
-  IconHash, IconCheckCircle, IconXCircle, IconLoader, IconAlertTriangle,
+  IconHash, IconSparkles, IconCheckCircle, IconXCircle, IconLoader, IconAlertTriangle,
 } from '../../components/icons';
 
 function Stat({ Icon, label, value, color = 'indigo' }) {
@@ -25,6 +25,7 @@ const QUICK_LINKS = [
   { href: '/pub/servers',     Icon: IconGlobe,    label: 'Servers' },
   { href: '/pub/play',        Icon: IconGamepad,  label: 'Chơi Online' },
   { href: '/pub/2048',        Icon: IconHash,     label: '2048' },
+  { href: '/pub/ai',          Icon: IconSparkles, label: 'Hỏi AI' },
 ];
 
 export default function PubHome() {
