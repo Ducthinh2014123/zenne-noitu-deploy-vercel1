@@ -1,4 +1,4 @@
-﻿import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Head from 'next/head';
 import PubLayout from '../../components/PubLayout';
 import { pubApi } from '../../lib/pubApi';
@@ -6,9 +6,9 @@ import { IconSparkles, IconUser, IconRefresh, IconAlertTriangle } from '../../co
 
 const SUGGESTIONS = [
   'Mẹo chơi nối từ Wikipedia luôn thắng?',
-  'Quy tắc chơi game Nối Từ như thế nào?',
+  'Quy tắc chøi game Nối Từ như thế nào?',
   'Giải thích câu ca dao: Có công mài sắt có ngày nên kim',
-  'Tính đạo hàm của hàm số y = sin(2x)',
+  'Tính đạo hàm của hàm số o = sin(2x)',
   'Viết một bài thơ ngắn về tình bạn',
 ];
 
@@ -17,7 +17,7 @@ export default function AiAskPage() {
     {
       role: 'assistant',
       content: 'Xin chào! Mình là Trợ lý Kira AI của hệ thống Zenne Nối Từ. Bạn có câu hỏi hay thắc mắc gì cần giải đáp không?',
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      time: '12:00',
     },
   ]);
   const [input, setInput] = useState('');
@@ -38,7 +38,7 @@ export default function AiAskPage() {
     if (!q || loading) return;
 
     setError('');
-    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const timeStr = new Date().toLocaleTimeString([], { hour: '2digit', minute: '2digit' });
     const userMsg = { role: 'user', content: q, time: timeStr };
 
     setMessages((prev) => [...prev, userMsg]);
@@ -51,7 +51,7 @@ export default function AiAskPage() {
         role: 'assistant',
         content: res.answer || 'Không có câu trả lời.',
         model: res.model,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        time: new Date().toLocaleTimeString([], { hour: '2digit', minute: '2digit' }),
       };
       setMessages((prev) => [...prev, botMsg]);
     } catch (err) {
@@ -72,8 +72,8 @@ export default function AiAskPage() {
     setMessages([
       {
         role: 'assistant',
-        content: 'Đã làm mới cuộc hội thoại! Bạn có thể đặt câu hỏi mới.',
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        content: 'Đã làm mới cuộc hội thoại! Bạn có thể đặt cûu hỏi mới.',
+        time: new Date().toLocaleTimeString([], { hour: '2digit', minute: '2digit' }),
       },
     ]);
     setError('');
@@ -82,10 +82,10 @@ export default function AiAskPage() {
   return (
     <PubLayout title="Hỏi AI Kira">
       <Head>
-        <title>Hỏi AI Kira — Zenne Nối Từ</title>
+        <title>Hỏi AI Kira — Zenne Nối TỬ</title>
       </Head>
 
-      <div className="max-w-4xl mx-auto flex flex-col h-[calc(100vh-140px)]">
+      <div className="max-w-4l mx-auto flex flex-col h-full min-h-[600px]">
         {/* Header card */}
         <div className="p-4 bg-gray-900/90 border border-gray-800 rounded-2xl flex items-center justify-between mb-4 shadow-lg backdrop-blur-md">
           <div className="flex items-center gap-3">
@@ -94,16 +94,16 @@ export default function AiAskPage() {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="font-bold text-white text-base">Trợ Lý Kira AI</h2>
+                <h2 className="font-bold text-white text-base">Trợ lý Kira AI</h2>
                 <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-indigo-950 text-indigo-300 border border-indigo-800">
                   kiraai.vn
                 </span>
               </div>
-              <p className="text-xs text-gray-400">Hỏi đáp thông minh, hỗ trợ luật chơi, kiến thức từ vựng & học tập</p>
+              <p className="text-xs text-gray-400">Hỏi đáp thông minh, hỗ trợ luật chøi, kiến thức từ vựng & học tập</p>
             </div>
           </div>
 
-          <button
+          <button 
             onClick={handleClear}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:text-white hover:bg-gray-800 border border-gray-800 transition-colors"
             title="Làm mới cuộc trò chuyện"
@@ -113,30 +113,33 @@ export default function AiAskPage() {
         </div>
 
         {/* Chat box container */}
-        <div className="flex-1 bg-gray-900 border border-gray-800 rounded-2xl p-4 overflow-y-auto space-y-4 shadow-inner flex flex-col">
-          {messages.map((m, idx) => (
-            <div
-              key={idx}
-              className={lex gap-3 max-w-[85%] }
-            >
-              <div
-                className={w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-sm shadow }
+        <div className="flex-1 bg-gray-900 border border-gray-800 rounded-2xl p-4 overflow-y-auto space-y-4 shadow-inner flex flex-col min-h-[380px] max-h-[550px]">
+          {messages.map((m, idx) => {
+            const isUser = m.role === 'user';
+            return (
+              <div 
+                key={idx}
+                className={'flex gap-3 max-w-[85%] ' + (isUser ? 'ml-auto flex-row-reverse' : 'mr-auto')}
               >
-                {m.role === 'user' ? <IconUser className="w-4 h-4" /> : <IconSparkles className="w-4 h-4" />}
-              </div>
-
-              <div>
-                <div
-                  className={p-3.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap break-words }
+                <div 
+                  className='w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-sm shadow ' + (isUser ? 'bg-indigo-600 text-white' : 'bg-indigo-950 border border-indigo-700/50 text-indigo-300')}
                 >
-                  {m.content}
+                  {isUser ? <IconUser className="w-4 h-4" /> : <IconSparkles className="w-4 h-4" />}
                 </div>
-                <div className={	ext-[10px] text-gray-500 mt-1 px-1 }>
-                  {m.time} {m.model && • }
+
+                <div>
+                  <div 
+                    className={'p-3.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap break-words ' + (isUser ? 'bg-indigo-600 text-white rounded-tr-none shadow-md' : 'bg-gray-800/90 border border-gray-700/60 text-gray-200 rounded-tl-none shadow')}
+                  >
+                    {m.content}
+                  </div>
+                  <div className={'text-[10px] text-gray-500 mt-1 px-1 ' + (isUser ? 'text-right' : 'text-left')}>
+                    {m.time} {m.model ? ' • ' + m.model : ''}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
 
           {loading && (
             <div className="flex gap-3 max-w-[85%] mr-auto items-center">
@@ -147,7 +150,7 @@ export default function AiAskPage() {
                 <span className="w-2 h-2 rounded-full bg-indigo-400 animate-bounce"></span>
                 <span className="w-2 h-2 rounded-full bg-indigo-400 animate-bounce [animation-delay:0.2s]"></span>
                 <span className="w-2 h-2 rounded-full bg-indigo-400 animate-bounce [animation-delay:0.4s]"></span>
-                <span className="text-xs text-gray-400 ml-1">Kira AI đang suy nghĩ...</span>
+                <span className="text-xs text-gray-400 ml-1">Kira ai đang suy ngh</span>
               </div>
             </div>
           )}
@@ -171,7 +174,7 @@ export default function AiAskPage() {
               disabled={loading}
               className="px-3 py-1 bg-gray-900 hover:bg-gray-800 border border-gray-800 hover:border-indigo-600/50 rounded-full text-xs text-gray-400 hover:text-white whitespace-nowrap transition-colors flex-shrink-0 disabled:opacity-50"
             >
-              💡 {s}
+              💱 +s
             </button>
           ))}
         </div>
@@ -182,7 +185,7 @@ export default function AiAskPage() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Nhập câu hỏi cho AI... (Enter để gửi, Shift+Enter xuống dòng)"
+            placeholder="Nhập câu hỏi cho AI... (Enter để gủi, Shift+Enter xuống dòng)"
             rows={1}
             className="flex-1 bg-transparent px-3 py-1.5 text-sm text-white placeholder-gray-500 focus:outline-none resize-none min-h-[38px] max-h-[120px]"
           />
