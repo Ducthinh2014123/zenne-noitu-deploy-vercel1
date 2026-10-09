@@ -15,13 +15,13 @@ export default async function handler(req, res) {
   }
 
   const selectedModel = model || KIRA_DEFAULT_MODEL;
-  const endpoint = ${KIRA_API_ENDPOINT.replace(/\/$/, '')}/chat/completions;
+  const endpoint = KIRA_API_ENDPOINT.replace(/\/$/, '') + '/chat/completions';
 
   try {
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
-        'Authorization': Bearer ,
+        'Authorization': 'Bearer ' + KIRA_API_KEY,
         'Content-Type': 'application/json',
         'User-Agent': 'Zenne-Web-AI/1.0',
       },
@@ -30,7 +30,7 @@ export default async function handler(req, res) {
         messages: [
           {
             role: 'system',
-            content: 'Bạn là Trợ lý AI thông minh, thân thiện của hệ sinh thái Nối Từ (Zenne). Hãy trả lời câu hỏi của người dùng một cách ngắn gọn, rõ ràng, chính xác và nhiệt tình bằng tiếng Việt.',
+            content: 'Bạn là Trợ lý AI thông minh, thân thiện của hệ thống Nối Từ (Zenne). Hãy trả lời câu hỏi của người dùng một cách ngắn gọn, rõ ràng, chính xác và nhiệt tình bằng tiếng Việt.',
           },
           {
             role: 'user',
@@ -45,7 +45,7 @@ export default async function handler(req, res) {
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      const errMsg = data?.error?.message || data?.error || Lỗi từ AI server (HTTP );
+      const errMsg = data?.error?.message || data?.error || ('Lỗi từ AI server (HTTP ' + response.status + ')');
       return res.status(response.status).json({ error: errMsg });
     }
 

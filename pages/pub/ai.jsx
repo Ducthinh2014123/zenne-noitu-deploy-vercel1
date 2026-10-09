@@ -122,7 +122,7 @@ export default function AiAskPage() {
                 className={'flex gap-3 max-w-[85%] ' + (isUser ? 'ml-auto flex-row-reverse' : 'mr-auto')}
               >
                 <div 
-                  className='w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-sm shadow ' + (isUser ? 'bg-indigo-600 text-white' : 'bg-indigo-950 border border-indigo-700/50 text-indigo-300')}
+                  className={'w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-sm shadow ' + (isUser ? 'bg-indigo-600 text-white' : 'bg-indigo-950 border border-indigo-700/50 text-indigo-300')}
                 >
                   {isUser ? <IconUser className="w-4 h-4" /> : <IconSparkles className="w-4 h-4" />}
                 </div>
